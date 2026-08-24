@@ -2,7 +2,7 @@
 
 NatsumeMusic 是一款面向 Windows 的 Galgame 音乐导入、整理与播放工具。选择游戏目录后，它可以递归扫描普通音频和常见资源包，把音乐复制到独立音乐库；即使原游戏之后被移动或删除，音乐库仍然可以离线播放。
 
-当前发布版本：`0.1.0` · Windows x64 · Electron
+当前发布版本：`0.1.0`
 
 ## 下载与安装
 
@@ -14,8 +14,6 @@ GitHub Release 建议上传下面两个压缩包和校验文件：
 | `NatsumeMusic-0.1.0-windows-x64-portable.zip` | 便携版。解压后直接运行 `NatsumeMusic-0.1.0-portable/NatsumeMusic.exe`，不会执行安装流程。 |
 | `SHA256SUMS.txt` | 两个 ZIP 的 SHA-256 校验值。 |
 
-便携版不能只拿出一个 `NatsumeMusic.exe` 使用，必须保留旁边的 `resources` 文件夹。安装版和便携版使用同一套应用数据；更新前请先关闭正在运行的旧版 NatsumeMusic。
-
 ## 功能
 
 - 递归扫描游戏目录中的 `.ogg`、`.mp3`、`.wav`、`.flac`、`.m4a`、`.aac`、`.opus`、`.wma` 和 `.owp`。
@@ -24,11 +22,9 @@ GitHub Release 建议上传下面两个压缩包和校验文件：
 - 导入时复制文件到用户选择的音乐库，按文件哈希去重；原游戏目录不会被修改。
 - 根据曲目时长将内容放入每个游戏的 `音乐` 或 `语音` 文件夹，语音阈值可以在设置中调整。
 - 支持搜索、收藏、播放列表、曲目编号、顺序/随机/单曲循环/列表循环、进度和音量控制。
-- 首次导入游戏后，通过 VNDB 与 Bangumi 的公开 API 查询游戏资料，并尝试下载本地封面。网络失败不会阻止音乐入库。
-- 导入完成页会显示 VNDB/Bangumi 的匹配状态：已匹配、无结果、候选不明确、查询失败或待查询；已有游戏可以手动刷新资料。
-- 支持七套可即时切换的主题：雨夜青岚、霓虹终端、琥珀胶片、海月玻璃、唱片番台、绯幕金声、音乐手帐。
-- 背景图片全局共用，可以导入 PNG/JPG/JPEG/WEBP/GIF，并调整模糊、遮罩、缩放和焦点位置；设置中还可以修改全局主要文字颜色或恢复主题默认颜色。
-- 曲目表头采用无彩色液态玻璃样式，右侧音乐库使用统一的外层滚动区域。
+- 首次导入游戏后，通过 VNDB 与 Bangumi 的公开 API 查询游戏资料，并尝试下载本地封面。
+- 支持七套可即时切换的主题。
+- 背景图片全局共用，可以导入 PNG/JPG/JPEG/WEBP/GIF，并调整模糊、遮罩、缩放和焦点位置；设置中还可以修改全局主要文字颜色。
 
 ## 快速开始
 
@@ -41,8 +37,6 @@ GitHub Release 建议上传下面两个压缩包和校验文件：
 
 ## 游戏资料与封面
 
-网络资料是导入后的附加步骤，不是播放的前置条件：
-
 - VNDB 和 Bangumi 查询需要网络，已缓存的资料和封面可以离线显示。
 - 名称匹配不明确时不会擅自覆盖封面，游戏编辑器中可以查看候选状态并点击“刷新网络资料”。
 - 手动选择的封面优先级最高，不会被后续自动匹配覆盖。
@@ -53,12 +47,6 @@ GitHub Release 建议上传下面两个压缩包和校验文件：
 - SQLite 数据库位于 Electron 的用户数据目录中的 `galmusic.db`；Windows 通常是 `%APPDATA%\galmusic\galmusic.db`。
 - 音乐文件和自动下载的封面位于用户选择的音乐库目录中。
 - 备份时请同时备份数据库文件和整个音乐库目录。只备份数据库会留下没有对应音频文件的曲目记录，单独备份音乐文件也会丢失收藏、播放列表和封面关联。
-
-## 常见问题
-
-### 设置里看不到主题
-
-请确认运行的是当前版本的 `NatsumeMusic.exe` 或安装版，而不是旧的 `GalMusic.lnk`。旧快捷方式可能仍然指向旧安装目录；重新运行安装版或直接打开便携版目录中的 `NatsumeMusic.exe` 即可。
 
 ### 导入游戏后没有找到音乐
 
@@ -97,17 +85,3 @@ npm run package:win
 ```
 
 深度扫描依赖 `resources/tools/garbro/` 下的 GARbro 文件。发布包已经携带这套运行时资源；从源码自行打包前，请先确认资源校验通过，并确认 GARbro 及其依赖允许以你的发布方式再分发。
-
-更详细的真实运行逻辑、代码地图和验证记录见：
-
-- [`docs/GalMusic-实际运行逻辑.md`](docs/GalMusic-实际运行逻辑.md)
-- [`docs/verification.md`](docs/verification.md)
-- [`docs/superpowers/plans/2026-08-24-game-metadata-auto-import.md`](docs/superpowers/plans/2026-08-24-game-metadata-auto-import.md)
-
-## GitHub 发布建议
-
-1. 将源码、`README.md`、必要的许可证和第三方声明放在仓库根目录。
-2. 不要把 `node_modules`、`out`、旧的 `release-v*` 构建目录或用户音乐库提交到源码仓库。
-3. 创建 GitHub Release，建议使用标签 `v0.1.0`。
-4. 在 Release Assets 中上传 `NatsumeMusic-0.1.0-windows-x64-installer.zip`、`NatsumeMusic-0.1.0-windows-x64-portable.zip` 和 `SHA256SUMS.txt`。
-5. 发布前确认 GARbro 和其他随包第三方组件的许可证、版权声明及再分发条件；如需要，请把对应的 `LICENSE`/`NOTICE` 文件一并放入仓库和发布说明。
