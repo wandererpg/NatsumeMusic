@@ -1,0 +1,44 @@
+{
+  "name": "galmusic",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./out/main/index.js",
+  "scripts": {
+    "rebuild:native": "electron-rebuild --force --which-module better-sqlite3 --version 31.7.7",
+    "postinstall": "npm run rebuild:native",
+    "predev": "npm run rebuild:native",
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "test": "node scripts/run-vitest-electron.mjs",
+    "test:watch": "vitest",
+    "verify:resources": "node scripts/verify-resources.mjs",
+    "package:win": "npm run rebuild:native && npm run verify:resources && npm run build && electron-builder --win"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "better-sqlite3": "^11.3.0",
+    "howler": "^2.2.4",
+    "lucide-react": "^0.468.0",
+    "music-metadata": "^10.7.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "uuid": "^10.0.0",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.6.1",
+    "@rollup/rollup-win32-x64-msvc": "^4.62.3",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.0.1",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.9.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "electron": "^31.7.7",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^2.3.0",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.5"
+  }
+}

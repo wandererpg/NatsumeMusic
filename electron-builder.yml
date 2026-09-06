@@ -1,0 +1,42 @@
+appId: com.galmusic.app
+productName: NatsumeMusic
+artifactName: ${productName}-${version}-${arch}.${ext}
+
+directories:
+  output: release
+
+# Keep the renderer/main bundles inside the asar while shipping the native
+# SQLite module and extraction tools as unpacked resources where Electron can
+# execute them.
+files:
+  - out/**/*
+  - package.json
+  - '!**/*.map'
+
+extraResources:
+  - from: resources/tools
+    to: tools
+    filter:
+      - '**/*'
+
+asar: true
+asarUnpack:
+  - node_modules/better-sqlite3/**/*
+
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+  executableName: NatsumeMusic
+
+nsis:
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: NatsumeMusic

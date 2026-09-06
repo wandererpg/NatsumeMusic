@@ -1,0 +1,33 @@
+node_modules/
+
+# Build and release output
+out/
+dist/
+release/
+release-v*/
+github-release-v*/
+github-release-staging-v*/
+
+# Local packaging tools and caches
+.packaging-tools/
+
+# User data and local runtime state
+%USERPROFILE%/
+已提取音乐/
+*.db
+*.db-shm
+*.db-wal
+
+# Local tooling state, logs, and OS files
+.superpowers/brainstorm/
+.vite/
+coverage/
+*.log
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
