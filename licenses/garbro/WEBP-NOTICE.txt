@@ -1,0 +1,6 @@
+libwebp
+
+The x86 and x64 `libwebp.dll` files are separate WebP native components. Preserve the WebP copyright and BSD-3-Clause license in every binary distribution.
+
+Official source and license:
+https://chromium.googlesource.com/webm/libwebp/+/main/COPYING

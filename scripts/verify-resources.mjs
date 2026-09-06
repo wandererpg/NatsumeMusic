@@ -3,8 +3,9 @@
 /**
  * Verify the resources required by a distributable NatsumeMusic build.
  *
- * GARbro is intentionally not checked into this repository. It is a
- * separately licensed Windows tool that must be supplied by the packager.
+ * This repository currently carries a GARbro bundle under resources/tools.
+ * The verifier checks that a build has the files it needs; it does not prove
+ * that the bundle's source or redistribution rights have been cleared.
  * Use `node scripts/verify-resources.mjs --root <resources-root>` to verify a
  * fixture or staging directory without modifying the source tree.
  */

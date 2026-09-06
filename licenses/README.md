@@ -1,30 +1,40 @@
 # 许可证材料目录
 
-这里保存 NatsumeMusic 发布前需要随源码或发布包提供的第三方许可证材料。
+这里保存 NatsumeMusic 源码仓库和 Windows 发布包需要携带的第三方许可证材料。
 
-当前状态：**准备中，不代表法律审查已经完成。**
+当前状态：**审计材料已补齐一部分；项目本体许可证、GARbro 当前构建来源和少数条件性组件仍未清除。**
 
-## 已复制的材料
+## 目录
 
-- `electron/`：从已验证的 Windows 构建中复制的 Electron 和 Chromium 许可文件。
-- `npm/`：从当前安装依赖中复制的可直接取得的许可证文本，文件名包含版本号；[`INVENTORY-SNAPSHOT.md`](npm/INVENTORY-SNAPSHOT.md) 是本次运行时依赖元数据审计快照。
-- `garbro/`：当前 GARbro 文件指纹和来源核对记录，见 [`PROVENANCE-RECORD.md`](garbro/PROVENANCE-RECORD.md)。
+- electron/：Electron 和 Chromium 的发布声明。
+- npm/：当前安装依赖的许可证文本和运行时审计快照。
+- garbro/：GARbro 及其随包 .NET/原生组件的版本、来源、许可证和再分发条件。
 
-## 还需要人工完成的工作
+GARbro 目录的入口是：
 
-- 由项目所有者选择 NatsumeMusic 自身的开源许可证，并在仓库根目录创建 `LICENSE`。
-- 确认 `resources/tools/garbro` 中 GARbro 二进制的官方来源、版本或 commit。
-- 为 GARbro 随附的每个第三方组件核对准确版本、版权人、许可证全文和来源。
-- 为没有随 npm 包提供许可证文件的依赖，从其官方仓库或对应版本发布包取得许可证全文；例如 `music-metadata` 官方仓库提供 `LICENSE.txt`，但仍应取得与当前 10.9.1 对应的版本文本，不能只根据 `package.json` 的 `license` 字段猜测版权声明。
-- 审查 `THIRD-PARTY-NOTICES.draft.md` 中所有 `REVIEW REQUIRED` 项，完成后再将草稿改名为正式的 `THIRD-PARTY-NOTICES.md`。
+- [逐项组件清单](garbro/COMPONENT-INVENTORY.md)
+- [来源和哈希记录](garbro/PROVENANCE-RECORD.md)
+- [GARbro 材料说明](garbro/README.md)
+
+## 已完成
+
+- 已将官方 GARbro v1.5.44 MIT 文本放到 resources/tools/garbro/LICENSE.txt。
+- 已记录官方 GARbro v1.5.44 tag、发布归档 SHA-256，以及当前本地目录与官方归档的差异。
+- 已保存当前本地 GARbro 依赖可取得的许可证文本，包括 MIT、BSD、Apache-2.0、MS-PL 和 MS-RL 材料。
+- 已保留 Electron LICENSE.electron.txt 和 LICENSES.chromium.html。
+
+## 仍需人工确认
+
+- 由项目所有者选择 NatsumeMusic 本体许可证、版权持有人和年份，并在仓库根目录添加 LICENSE；package.json 的 license 字段也应同步。
+- 确认 resources/tools/garbro 当前二进制来自哪个 release、commit、fork 或自行编译，并保存源代码 commit、构建命令和修改清单。
+- 为 GARbro.Probe、XP3 bridge 和 RPA bridge 补充作者、版权、来源和许可证；无法证明的文件应从发布包移除。
+- 为 MS-RL 的 WiX DTF 文件提供包含对应代码文件的源代码或正式 source offer。
+- 以最终 installer/portable ZIP 的实际文件清单为准，补齐所有 .NET/原生依赖的许可证和 NOTICE。
+- 关闭全部阻塞项后，才把 THIRD-PARTY-NOTICES.draft.md 改名为正式 THIRD-PARTY-NOTICES.md，并重新生成发布包。
 
 ## 复核原则
 
 1. 以最终发布 ZIP 中实际携带的文件为准，而不是只看源码依赖树。
 2. 不要把 GARbro 的 MIT 许可证套用到它携带的所有 DLL。
-3. 不要删除 `LICENSE.electron.txt` 或 `LICENSES.chromium.html`。
+3. 不要删除 Electron/Chromium 的既有许可证文件。
 4. 如果某个组件的来源或许可证无法确认，应暂缓公开发布，或移除该组件后重新打包。
-
-## 当前 ZIP 状态
-
-`github-release-v1` 中的现有 ZIP 是在本目录材料补齐前生成的：portable ZIP 目前只检出 `better-sqlite3` 的许可证文件，installer ZIP 也没有可检出的根目录许可证材料。因此，完成最终复核后必须重新生成两个 ZIP，并再次检查 ZIP 内的 `LICENSE`、`THIRD-PARTY-NOTICES.md`、`licenses/` 以及 Electron/Chromium 声明。

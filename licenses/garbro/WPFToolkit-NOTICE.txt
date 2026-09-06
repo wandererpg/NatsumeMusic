@@ -1,0 +1,8 @@
+WPF Toolkit / WPFToolkit 3.5.50211.1
+
+Copyright © 2010 Microsoft Corp. All rights reserved.
+
+The NuGet package metadata identifies this component as Microsoft Public License (MS-PL):
+https://www.nuget.org/packages/WPFToolkit/3.5.50211.1
+
+The applicable license text is preserved in `MS-PL.txt` in this directory. Do not treat this component as MIT or as part of the GARbro core MIT license.

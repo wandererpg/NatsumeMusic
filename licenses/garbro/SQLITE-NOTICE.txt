@@ -1,0 +1,11 @@
+System.Data.SQLite.Core 1.0.119 / SQLite
+
+The bundled System.Data.SQLite provider identifies SQLite's copyright page as its license source. SQLite's deliverable code and documentation are dedicated to the public domain.
+
+SQLite copyright and public-domain statement:
+https://www.sqlite.org/copyright.html
+
+Provider package:
+https://www.nuget.org/packages/System.Data.SQLite.Core/1.0.119
+
+The provider DLL and the x86/x64 `SQLite.Interop.dll` files must still be tied to the exact source package and hashes used for the release. This notice does not grant rights to unrelated files in the directory.

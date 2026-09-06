@@ -11,6 +11,11 @@ directories:
 files:
   - out/**/*
   - package.json
+  # Keep the project license, the draft/final third-party notice, and the
+  # component license archive visible in both installer and portable builds.
+  - LICENSE*
+  - THIRD-PARTY-NOTICES*.md
+  - licenses/**/*
   - '!**/*.map'
 
 extraResources:

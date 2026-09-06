@@ -116,7 +116,7 @@ npm run package:win
 
 ## 许可证与第三方组件
 
-发布包包含 GARbro、Electron/Chromium 以及多个 npm/.NET 依赖。许可证材料和当前逐项复核状态见 [`THIRD-PARTY-NOTICES.draft.md`](THIRD-PARTY-NOTICES.draft.md) 与 [`licenses/README.md`](licenses/README.md)。草稿中的 `REVIEW REQUIRED` 项完成核对、项目所有者选择本项目许可证后，才能作为正式发布声明。
+发布包包含 GARbro、Electron/Chromium 以及多个 npm/.NET 依赖。许可证材料和当前逐项复核状态见 [`THIRD-PARTY-NOTICES.draft.md`](THIRD-PARTY-NOTICES.draft.md)、[`licenses/README.md`](licenses/README.md) 和 [`licenses/garbro/COMPONENT-INVENTORY.md`](licenses/garbro/COMPONENT-INVENTORY.md)。当前仍缺少项目本体的根目录正式 `LICENSE`，且 GARbro 当前构建的来源尚未完全证明；草稿完成所有门禁后才能改名为正式声明。
 
 ## GitHub 发布建议
 
