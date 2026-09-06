@@ -19,6 +19,11 @@ if ($actualRemote -ne $expectedRemote) {
     throw "Unexpected origin '$actualRemote'. Expected '$expectedRemote'."
 }
 
+$currentBranch = (& git branch --show-current).Trim()
+if ($currentBranch -ne 'main') {
+    throw "Current branch is '$currentBranch'. Run this sync script from the main branch."
+}
+
 $changes = @(git status --porcelain)
 if ($changes.Count -eq 0) {
     Write-Host 'No local changes to commit.'
