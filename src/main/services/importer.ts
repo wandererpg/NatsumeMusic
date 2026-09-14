@@ -16,6 +16,7 @@ import { scanFolder, type AudioCandidate } from './scanner';
 import { categoryDirectory } from './library-layout';
 import { classifyTrack } from './track-classification';
 import type { GameMetadataService } from './game-metadata';
+import { readAudioMetadata } from './metadata';
 
 type SQLiteDatabase = Database.Database;
 
@@ -55,6 +56,8 @@ export interface ImportOptions {
   extractor?: ExtractorLike;
   /** Optional game-level metadata enrichment; omitted for offline embedders/tests. */
   metadata?: GameMetadataService;
+  /** Optional GARbro NWA bridge path, primarily useful for embedders/tests. */
+  nwaBridgePath?: string;
 }
 
 interface ArchiveWalkResult {
@@ -260,9 +263,10 @@ async function allocateTarget(
 }
 
 function importedFileName(candidate: AudioCandidate): string {
-  return path.extname(candidate.fileName).toLowerCase() === '.owp'
-    ? `${path.basename(candidate.fileName, path.extname(candidate.fileName))}.ogg`
-    : candidate.fileName;
+  const extension = path.extname(candidate.fileName).toLowerCase();
+  if (extension === '.owp') return `${path.basename(candidate.fileName, extension)}.ogg`;
+  if (extension === '.nwa') return `${path.basename(candidate.fileName, extension)}.wav`;
+  return candidate.fileName;
 }
 
 async function scanCandidates(
@@ -463,8 +467,15 @@ export async function importGameFolder(options: ImportOptions): Promise<ScanResu
         usedNamesByKind.set(kind, usedNames);
       }
       target = await allocateTarget(destinationDirectory, importedFileName(candidate), usedNames);
-      await copyAudioFileStreaming(candidate.sourcePath, target.filePath, { signal: options.signal });
+      await copyAudioFileStreaming(candidate.sourcePath, target.filePath, {
+        signal: options.signal,
+        nwaBridgePath: options.nwaBridgePath,
+      });
       throwIfAborted(options.signal);
+
+      const importedMetadata = path.extname(candidate.sourcePath).toLowerCase() === '.nwa'
+        ? await readAudioMetadata(target.filePath)
+        : null;
 
       const input: TrackInput = {
         id: randomUUID(),
@@ -474,9 +485,9 @@ export async function importGameFolder(options: ImportOptions): Promise<ScanResu
         // Prefer a formal embedded title for display.  The copied file name
         // remains untouched and is still shown as the source name in the UI.
         customName: candidate.title ?? null,
-        duration: candidate.duration,
+        duration: importedMetadata?.duration ?? candidate.duration,
         format: path.extname(target.fileName).replace(/^\./, '').toLowerCase() || candidate.format,
-        fileSize: candidate.fileSize,
+        fileSize: importedMetadata?.fileSize ?? candidate.fileSize,
         fileHash: candidate.fileHash,
         trackNumber: nextTrackNumber,
         kind,

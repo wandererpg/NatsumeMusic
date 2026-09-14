@@ -40,6 +40,7 @@ export async function verifyResources(resourceRoot = parseRoot(process.argv.slic
     path.join(resourceRoot, 'tools', 'garbro', 'GARbro.Console.exe'),
     path.join(resourceRoot, 'tools', 'garbro', 'GARbro.Xp3Bridge.exe'),
     path.join(resourceRoot, 'tools', 'garbro', 'GARbro.Probe.exe'),
+    path.join(resourceRoot, 'tools', 'garbro', 'GARbro.NwaBridge.exe'),
     path.join(resourceRoot, 'tools', 'garbro', 'ArcFormats.dll'),
     path.join(resourceRoot, 'tools', 'garbro', 'GameData', 'Formats.dat'),
     path.join(resourceRoot, 'tools', 'extract-rpa.mjs'),
@@ -59,7 +60,7 @@ export async function verifyResources(resourceRoot = parseRoot(process.argv.slic
         ? `GARbro.exe is missing or empty: ${filePath}`
         : `Missing or empty file: ${filePath}`),
       '',
-      'Supply the complete licensed GARbro bundle and NatsumeMusic XP3 bridge under:',
+      'Supply the complete licensed GARbro bundle and NatsumeMusic extraction bridges under:',
       `  ${path.dirname(garbroPath)}`,
       'or pass --root <resources-root> (or GALMUSIC_RESOURCE_ROOT) for a staging/fixture directory.',
     ];

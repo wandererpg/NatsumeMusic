@@ -3,11 +3,14 @@ import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { pipeline } from 'node:stream/promises';
 
+import { convertNwaToWav } from './nwa';
 import { openDecodedOwpStream } from './owp';
 
 export interface CopyFileOptions {
   /** Abort an in-flight stream copy without waiting for the source to finish. */
   signal?: AbortSignal;
+  /** Optional GARbro NWA bridge path, primarily useful for embedders/tests. */
+  nwaBridgePath?: string;
 }
 
 /**
@@ -80,8 +83,16 @@ export async function copyAudioFileStreaming(
   targetPath: string,
   options: CopyFileOptions = {},
 ): Promise<void> {
-  if (path.extname(sourcePath).toLowerCase() !== '.owp') {
-    await copyFileStreaming(sourcePath, targetPath, options);
+  const extension = path.extname(sourcePath).toLowerCase();
+  if (extension !== '.owp') {
+    if (extension === '.nwa') {
+      await convertNwaToWav(sourcePath, targetPath, {
+        bridgePath: options.nwaBridgePath,
+        signal: options.signal,
+      });
+    } else {
+      await copyFileStreaming(sourcePath, targetPath, options);
+    }
     return;
   }
 

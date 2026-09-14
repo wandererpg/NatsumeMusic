@@ -11,6 +11,7 @@ import { readAudioMetadata } from '../../src/main/services/metadata';
 describe('file utilities', () => {
   it('accepts galgame audio formats case-insensitively', () => {
     expect(isAudioFile('BGM.OGG')).toBe(true);
+    expect(isAudioFile('クドわふたー/BGM01.NWA')).toBe(true);
     expect(isAudioFile('cover.png')).toBe(false);
     expect(isArchiveFile('DATA.XP3')).toBe(true);
     expect(isArchiveFile('DATA.zip')).toBe(false);
@@ -69,6 +70,24 @@ describe('file utilities', () => {
       duration: null,
       format: 'ogg',
       fileSize: 21,
+    });
+  });
+
+  it('reads duration from a VisualArt RealLive NWA header', async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'galmusic-nwa-'));
+    const source = path.join(dir, 'BGM01.nwa');
+    const header = Buffer.alloc(44);
+    header.writeUInt16LE(2, 0);
+    header.writeUInt16LE(16, 2);
+    header.writeUInt32LE(44_100, 4);
+    header.writeInt32LE(5, 8);
+    header.writeUInt32LE(882_000, 28);
+    await writeFile(source, header);
+
+    await expect(readAudioMetadata(source)).resolves.toEqual({
+      duration: 10,
+      format: 'nwa',
+      fileSize: 44,
     });
   });
 });

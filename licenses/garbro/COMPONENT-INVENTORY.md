@@ -18,6 +18,7 @@
 | --- | --- | --- | --- |
 | `GARbro.exe`、`GARbro.Console.exe`、`GARbro.GUI.exe`、`Arc*.dll`、`GameRes.dll`、`GameData/*`、语言资源 | GUI 文件版本 `1.5.44.3043`；`GARbro.exe`/`Console` 为 `1.0.0.0` | [morkt/GARbro](https://github.com/morkt/GARbro)，官方 `v1.5.44` 为 MIT；本地 MIT 文本在 `resources/tools/garbro/LICENSE.txt` | 许可证已核验；**来源阻塞**。当前目录不是官方 `GARbro-v1.5.44.2904.rar` 的逐字节副本，见来源记录 |
 | `GARbro.Probe.exe`、`GARbro.Xp3Bridge.exe`、`GARbro.Xp3Bridge.cs` | EXE 文件版本 `0.0.0.0`；源文件无作者/许可证头 | 当前仓库中没有足够的来源、作者、构建 commit 或修改说明 | **来源阻塞**；需由作者补充归属并提供源代码/构建记录，或从发布包移除 |
+| `GARbro.NwaBridge.exe`、`GARbro.NwaBridge.cs` | 仓库内非交互 NWA 转 WAV bridge；使用 .NET Framework C# 编译 | 项目自有适配代码，调用随包 GARbro `GameRes.dll`/`ArcFormats.dll` 的 `RealLive.NwaAudio` 与 `WaveAudio` API | **项目许可证待定 + 依赖来源需绑定**；应保留源代码和构建命令，并在确认根目录许可证后补充版权声明 |
 | `extract-rpa.mjs` | 当前仓库自有脚本，无独立版权头 | 不是 GARbro 官方文件；应按 NatsumeMusic 自有代码处理 | **项目许可证待定**；根目录许可证确定后再明确归属 |
 | `BCnEncoder.dll` | `2.3.0`，产品 commit `74eda8a330759d81e6307f19aefc547e40687825` | [BCnEncoder.Net 2.3.0](https://www.nuget.org/packages/BCnEncoder.Net/2.3.0)，MIT OR Unlicense | 许可证已核验；应同时记录其 `CommunityToolkit.HighPerformance`、`Microsoft.Bcl.Numerics` 依赖 |
 | `CommunityToolkit.HighPerformance.dll` | `8.4.0.1` | [CommunityToolkit.HighPerformance 8.4.0](https://www.nuget.org/packages/CommunityToolkit.HighPerformance/8.4.0)，MIT；包内另有 `ThirdPartyNotices.txt` | 许可证已核验；发布包应保留该包的第三方声明 |
@@ -43,6 +44,6 @@
 ## 发布前必须完成
 
 - 为当前 GARbro 目录补充“来源压缩包/commit → 构建命令 → 修改列表 → 每个最终文件哈希”的可复现记录。
-- 为两个 XP3 bridge 和 RPA bridge 补充作者、版权、源代码和许可证；如果它们属于项目本体，应在根目录许可证确定后加入相应版权声明。
+- 为 GARbro.Probe、两个 XP3 bridge、NWA bridge 和 RPA bridge 补充作者、版权、源代码和许可证；如果它们属于项目本体，应在根目录许可证确定后加入相应版权声明。
 - 对 MS-RL 的 WiX DTF 文件提供对应源代码交付物或正式 source offer，并在最终发布包内放入 MS-RL 文本。
 - 将本表中每个“许可证已核验”组件的许可证/NOTICE 复制到发布 ZIP，并检查安装包与便携包内容一致。

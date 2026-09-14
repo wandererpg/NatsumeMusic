@@ -13,7 +13,7 @@
 
 1. GARbro 官方 v1.5.44 的 MIT 许可证已经取得，文本副本在 resources/tools/garbro/LICENSE.txt。但当前本地 GARbro 目录不是官方 GARbro-v1.5.44.2904.rar 的逐字节副本，来源和改动记录仍未完成。
 2. GARbro 随包 DLL 不能统一套用 GARbro 的 MIT。WiX DTF 是 MS-RL；Windows API Code Pack 是微软自定义软件条款；Concentus.Oggfile 1.0.6 是包元数据/固定源码 commit 所指的 MS-PL；ImageSharp 是 Apache-2.0。
-3. GARbro.Probe.exe、GARbro.Xp3Bridge.exe/.cs 和 extract-rpa.mjs 的作者、来源、构建记录或本体许可证信息不完整，当前不能清除再分发。
+3. GARbro.Probe.exe、GARbro.Xp3Bridge.exe/.cs、GARbro.NwaBridge.exe/.cs 和 extract-rpa.mjs 的作者、来源、构建记录或本体许可证信息不完整，当前不能清除再分发。
 4. NatsumeMusic 自身仍没有根目录正式 LICENSE。项目所有者需要确认许可证和版权持有人；不能由第三方组件的许可证替代。
 
 完整的程序集版本、产品 commit、许可证和条件见 licenses/garbro/COMPONENT-INVENTORY.md；本地文件哈希见 licenses/garbro/PROVENANCE-RECORD.md 和 licenses/garbro/LOCAL-SHA256SUMS.txt。

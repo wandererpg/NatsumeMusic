@@ -18,7 +18,8 @@ GitHub Release 建议上传下面两个压缩包和校验文件：
 
 ## 功能
 
-- 递归扫描游戏目录中的 `.ogg`、`.mp3`、`.wav`、`.flac`、`.m4a`、`.aac`、`.opus`、`.wma` 和 `.owp`。
+- 递归扫描游戏目录中的 `.ogg`、`.mp3`、`.wav`、`.flac`、`.m4a`、`.aac`、`.opus`、`.wma`、`.owp` 和 VisualArt/RealLive `.nwa`。
+- 导入 `.nwa` 时通过随包提供的 GARbro NWA bridge 自动转换为标准 `.wav`；原始游戏文件保持不变。
 - 深度扫描 `.xp3`、`.rpa`、`.arc`、`.pak` 等 Galgame 资源包，并调用随发布包提供的 GARbro 工具解包。
 - 识别 Studio Miris `SM2MPX10` 无扩展名容器：自动导入 `WMSC` 音乐，也可以按需导入 `VOICE*` 语音。
 - 导入时复制文件到用户选择的音乐库，按文件哈希去重；原游戏目录不会被修改。
@@ -62,7 +63,7 @@ GitHub Release 建议上传下面两个压缩包和校验文件：
 
 ### 导入游戏后没有找到音乐
 
-请选择游戏根目录而不是某一个内部文件，并开启深度扫描。对于无扩展名资源，软件只会把文件头为 `SM2MPX10` 且容器名为 `WMSC` 的内容识别为音乐；`VOICE*` 需要打开包含语音选项。GARbro 诊断日志位于用户数据目录的 `logs/garbro.log`。
+请选择游戏根目录而不是某一个内部文件，并开启深度扫描。`.nwa` 会直接被识别并在导入时转换为 `.wav`；如果转换失败，请确认发布包中的 `resources/tools/garbro/GARbro.NwaBridge.exe` 与 GARbro DLL 位于原位置。对于无扩展名资源，软件只会把文件头为 `SM2MPX10` 且容器名为 `WMSC` 的内容识别为音乐；`VOICE*` 需要打开包含语音选项。GARbro 诊断日志位于用户数据目录的 `logs/garbro.log`。
 
 ### 没有自动封面
 
@@ -107,6 +108,18 @@ npm run package:win
 ```
 
 脚本只会添加未被 `.gitignore` 排除的文件，并使用普通非强制推送；远程分支出现冲突时会停止，不会覆盖远程历史。只想检查提交内容而暂不上传时，加上 `-NoPush`。
+
+## 本次对话优化记录（2026-09-14）
+
+本次针对 `wandererpg/NatsumeMusic` 完成了以下优化。NatsumeNote 的分页手账和白板功能属于另一个项目，不包含在本仓库或 NatsumeMusic 发布包中。
+
+- **补充 VisualArt/RealLive `.nwa` 支持**：扫描时识别 `.nwa`，读取固定头获取音频信息，导入时通过随包的 `GARbro.NwaBridge.exe` 自动转换为标准 `.wav`；原始游戏文件不会被修改。已使用真实的 `BGM01.nwa` 完成 `RIFF/WAVE` 输出验证。
+- **修复文件夹按钮行为**：曲目和作品音乐区域的文件夹按钮现在调用 `shell.showItemInFolder`，打开资源管理器并定位曲目文件，不再根据 Windows 文件关联启动媒体播放器。
+- **更新 Windows 发布产物**：重新生成 Windows x64 便携版和 NSIS 安装版，并修复桌面 `NatsumeMusic.lnk` 指向旧沙盒路径的问题。便携版必须完整保留 `resources` 文件夹。
+- **同步文档、资源门禁和许可证记录**：更新运行逻辑、README、GARbro 组件清单、第三方声明草稿和资源校验脚本，登记 NWA bridge 及其当前待复核的来源与再分发状态。
+- **完成验证**：`npm test`（48 个测试文件、265 个测试）、`npx tsc --noEmit`、`npm run build`、`npm run verify:resources`、真实 NWA 转换和新版 EXE 启动检查均已通过。
+
+详细的文件级变更、验证过程、ZIP 使用说明和发布前待办见 [`docs/NatsumeMusic-本次对话优化记录.md`](docs/NatsumeMusic-本次对话优化记录.md)。当前仍需项目所有者补充根目录正式 `LICENSE`，完成 GARbro 及相关依赖的许可证/来源复核，并根据分发渠道决定是否配置代码签名。
 
 更详细的真实运行逻辑、代码地图和验证记录见：
 

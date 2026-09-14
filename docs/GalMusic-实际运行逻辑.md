@@ -128,9 +128,10 @@ createMainWindow() → renderer
 | `src/main/services/importer.ts` | 扫描、解包、分类、去重、复制和 SQLite 持久化的总编排器 |
 | `src/main/services/extractor.ts` | 临时目录、RPA/GARbro/Probe 解包及取消清理 |
 | `src/main/services/garbro-runner.ts` | 无 shell 参数数组启动外部 GARbro，并处理输出、退出码和日志 |
-| `src/main/services/file-copy.ts` | 流式复制及 OWP 解码复制 |
+| `src/main/services/file-copy.ts` | 流式复制、OWP 解码复制及 NWA 转 WAV |
 | `src/main/services/owp.ts` | Anemoi OWP 的 XOR 0x39 解码为 OGG 流 |
-| `src/main/services/metadata.ts` | `music-metadata` 解析 duration、container 和嵌入标题 |
+| `src/main/services/nwa.ts` | 解析 VisualArt/RealLive NWA 头，并调用 GARbro NWA bridge 转为 WAV |
+| `src/main/services/metadata.ts` | `music-metadata` 解析 duration、container 和嵌入标题；NWA 使用固定头读取时长 |
 | `src/main/services/track-classification.ts` | 音乐/语音阈值分类 |
 | `src/main/services/library-layout.ts` | `音乐`/`语音`目录、冲突文件名分配 |
 | `src/main/services/library-layout-migration.ts` | 启动时迁移旧的未分类曲目 |
@@ -218,7 +219,7 @@ g.name       → gameName
 | `dialog:select-folder` | 选择目录 | 返回路径或 null |
 | `dialog:select-files` | 选择音频文件 | 支持多选，包含 `.owp` |
 | `dialog:select-image` | 选择封面图片 | 只接受 PNG/JPG/WEBP/GIF |
-| `shell:open-explorer` | 用资源管理器打开路径 | 主进程调用 `shell.openPath` |
+| `shell:open-explorer` | 用资源管理器打开文件所在位置 | 主进程调用 `shell.showItemInFolder`，不会按文件关联启动媒体播放器 |
 | `app:get-settings` / `app:set-setting` | 读写设置 | 值在 IPC 层以字符串传输 |
 | `window:minimize` / `window:toggle-maximize` / `window:close` | 无边框窗口控制 | 只操作发送请求的窗口 |
 
@@ -279,7 +280,7 @@ MD5 去重（数据库已有 + 本次导入已见）
 5. 只接受以下音频扩展名，大小写不敏感：
 
    ```text
-   .ogg .mp3 .wav .flac .m4a .aac .opus .wma .owp
+   .ogg .mp3 .wav .flac .m4a .aac .opus .wma .owp .nwa
    ```
 
 6. 扫描前先读取同目录的 `.cue`、`.m3u`、`.m3u8` sidecar，给没有嵌入标题的文件补显示标题。
@@ -362,6 +363,10 @@ track (2).ogg
 ### 9.3 OWP
 
 `.owp` 是导入候选格式，不是最终库格式。[`src/main/services/owp.ts`](../src/main/services/owp.ts) 先验证 XOR 解码后是否为 `OggS`，然后以流方式将每个字节与 `0x39` 异或，目标文件改名为 `.ogg`。数据库中的 format、播放器传给 Howler 的 format 也以最终 `.ogg` 为准。
+
+### 9.4 NWA
+
+`.nwa` 是 VisualArt/RealLive 使用的独立压缩音频格式，通常不能被 `GARbro.Console.exe` 当作归档直接解包。扫描阶段从 40 字节固定头读取声道数、位深、采样率和采样数，用于估算 duration；复制阶段调用 `resources/tools/garbro/GARbro.NwaBridge.exe <input.nwa> <output.wav>`，由 GARbro 的 `NwaAudio` 解码器读取，再由 `WaveAudio` 写出标准 WAV。数据库和播放器使用转换后的 `.wav` 文件信息，原始 `.nwa` 不会被改写。
 
 ## 10. 音乐库磁盘布局
 
@@ -551,12 +556,13 @@ GARbro.exe
 GARbro.Console.exe
 GARbro.Xp3Bridge.exe
 GARbro.Probe.exe
+GARbro.NwaBridge.exe
 ArcFormats.dll
 GameData/Formats.dat
 extract-rpa.mjs
 ```
 
-当前工作区的 `node scripts/verify-resources.mjs` 已通过。GARbro 的二进制是外部工具，本项目源码只负责启动和解释结果。
+当前工作区的 `node scripts/verify-resources.mjs` 已通过。GARbro 的二进制是外部工具；`GARbro.NwaBridge.exe` 是仓库内的非交互适配程序，源码位于同目录，负责调用 GARbro 的 NWA 解码器并输出 WAV。
 
 ## 16. 设计文档与当前实现的差异
 

@@ -3,6 +3,7 @@ import path from 'node:path';
 import * as musicMetadata from 'music-metadata';
 
 import { openDecodedOwpStream } from './owp';
+import { readNwaHeader } from './nwa';
 
 export interface AudioMetadata {
   /** Embedded Vorbis/ID3 title, when the source file provides one. */
@@ -78,6 +79,15 @@ function extensionFallback(filePath: string): string | null {
 export async function readAudioMetadata(filePath: string): Promise<AudioMetadata> {
   const fileSize = (await stat(filePath)).size;
   const fallbackFormat = extensionFallback(filePath);
+
+  if (path.extname(filePath).toLowerCase() === '.nwa') {
+    const nwa = await readNwaHeader(filePath).catch(() => null);
+    return {
+      duration: nwa?.duration ?? null,
+      format: fallbackFormat,
+      fileSize,
+    };
+  }
 
   try {
     const metadata = path.extname(filePath).toLowerCase() === '.owp'

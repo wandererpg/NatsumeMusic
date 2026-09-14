@@ -27,7 +27,7 @@ GARbro 目录的入口是：
 
 - 由项目所有者选择 NatsumeMusic 本体许可证、版权持有人和年份，并在仓库根目录添加 LICENSE；package.json 的 license 字段也应同步。
 - 确认 resources/tools/garbro 当前二进制来自哪个 release、commit、fork 或自行编译，并保存源代码 commit、构建命令和修改清单。
-- 为 GARbro.Probe、XP3 bridge 和 RPA bridge 补充作者、版权、来源和许可证；无法证明的文件应从发布包移除。
+- 为 GARbro.Probe、XP3 bridge、NWA bridge 和 RPA bridge 补充作者、版权、来源和许可证；无法证明的文件应从发布包移除。
 - 为 MS-RL 的 WiX DTF 文件提供包含对应代码文件的源代码或正式 source offer。
 - 以最终 installer/portable ZIP 的实际文件清单为准，补齐所有 .NET/原生依赖的许可证和 NOTICE。
 - 关闭全部阻塞项后，才把 THIRD-PARTY-NOTICES.draft.md 改名为正式 THIRD-PARTY-NOTICES.md，并重新生成发布包。

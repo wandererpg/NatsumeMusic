@@ -1,4 +1,4 @@
-import { ExternalLink, Heart, ListPlus, Pause, Pencil, Play, Trash2, X } from 'lucide-react';
+import { FolderOpen, Heart, ListPlus, Pause, Pencil, Play, Trash2, X } from 'lucide-react';
 
 import type { Track } from '../../../../shared/types';
 
@@ -153,7 +153,7 @@ export function TrackRow({
             onOpenFolder?.(track);
           }}
         >
-          <ExternalLink size={14} aria-hidden="true" />
+          <FolderOpen size={14} aria-hidden="true" />
         </button>
         <button
           className="icon-button icon-button--small row-action"

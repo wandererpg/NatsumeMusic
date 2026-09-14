@@ -16,6 +16,7 @@ export const AUDIO_EXTENSIONS: ReadonlySet<string> = new Set([
   '.opus',
   '.wma',
   '.owp',
+  '.nwa',
 ]);
 
 /** Archive formats supported by the deep scanner/extractor pipeline. */

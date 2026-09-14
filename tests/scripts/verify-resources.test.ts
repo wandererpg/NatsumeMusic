@@ -17,6 +17,7 @@ describe('resource verification', () => {
     await writeFile(path.join(root, 'tools', 'garbro', 'GARbro.Console.exe'), 'fixture-console');
     await writeFile(path.join(root, 'tools', 'garbro', 'GARbro.Xp3Bridge.exe'), 'fixture-xp3-bridge');
     await writeFile(path.join(root, 'tools', 'garbro', 'GARbro.Probe.exe'), 'fixture-probe');
+    await writeFile(path.join(root, 'tools', 'garbro', 'GARbro.NwaBridge.exe'), 'fixture-nwa-bridge');
     await writeFile(path.join(root, 'tools', 'garbro', 'ArcFormats.dll'), 'fixture-formats');
     await mkdir(path.join(root, 'tools', 'garbro', 'GameData'), { recursive: true });
     await writeFile(path.join(root, 'tools', 'garbro', 'GameData', 'Formats.dat'), 'fixture-schemes');
@@ -56,6 +57,24 @@ describe('resource verification', () => {
     await expect(execFileAsync(process.execPath, [scriptPath, '--root', root])).rejects.toMatchObject({
       code: 1,
       stderr: expect.stringContaining('GARbro.Probe.exe'),
+    });
+  });
+
+  it('rejects a GARbro bundle without the NWA bridge', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'galmusic-resources-no-nwa-bridge-'));
+    await mkdir(path.join(root, 'tools', 'garbro', 'GameData'), { recursive: true });
+    await writeFile(path.join(root, 'tools', 'garbro', 'GARbro.exe'), 'fixture-garbro');
+    await writeFile(path.join(root, 'tools', 'garbro', 'GARbro.Console.exe'), 'fixture-console');
+    await writeFile(path.join(root, 'tools', 'garbro', 'GARbro.Xp3Bridge.exe'), 'fixture-xp3-bridge');
+    await writeFile(path.join(root, 'tools', 'garbro', 'GARbro.Probe.exe'), 'fixture-probe');
+    await writeFile(path.join(root, 'tools', 'garbro', 'ArcFormats.dll'), 'fixture-formats');
+    await writeFile(path.join(root, 'tools', 'garbro', 'GameData', 'Formats.dat'), 'fixture-schemes');
+    await mkdir(path.join(root, 'tools'), { recursive: true });
+    await writeFile(path.join(root, 'tools', 'extract-rpa.mjs'), '// fixture');
+
+    await expect(execFileAsync(process.execPath, [scriptPath, '--root', root])).rejects.toMatchObject({
+      code: 1,
+      stderr: expect.stringContaining('GARbro.NwaBridge.exe'),
     });
   });
 
