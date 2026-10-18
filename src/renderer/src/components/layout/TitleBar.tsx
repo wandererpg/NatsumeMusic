@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Menu, Minus, Search, Settings2, Square, X } from 'lucide-react';
 
 export interface TitleBarProps {
@@ -36,6 +37,20 @@ export function TitleBar({
   onToggleMaximize,
   onClose,
 }: TitleBarProps) {
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const focusSearch = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.key.toLowerCase() !== 'k') return;
+      if (document.querySelector('[aria-modal="true"]')) return;
+      event.preventDefault();
+      searchRef.current?.focus();
+      searchRef.current?.select();
+    };
+    window.addEventListener('keydown', focusSearch);
+    return () => window.removeEventListener('keydown', focusSearch);
+  }, []);
+
   return (
     <header className="title-bar" data-testid="title-bar">
       <div className="title-bar__leading">
@@ -48,7 +63,7 @@ export function TitleBar({
         </div>
         <div className="brand-lockup">
             <span className="brand-lockup__name">NatsumeMusic</span>
-          <span className="brand-lockup__hint">AFTERGLOW LIBRARY</span>
+          <span className="brand-lockup__hint">游戏原声收藏馆</span>
         </div>
       </div>
 
@@ -56,13 +71,23 @@ export function TitleBar({
         <Search size={16} strokeWidth={2} aria-hidden="true" />
         <span className="sr-only">{copy.searchLabel}</span>
         <input
+          ref={searchRef}
           type="search"
           value={searchText}
           placeholder={copy.searchPlaceholder}
           onChange={(event) => onSearchChange?.(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && searchText) {
+              event.preventDefault();
+              onSearchChange?.('');
+            }
+          }}
           aria-label={copy.searchLabel}
+          aria-keyshortcuts="Control+k Meta+k"
         />
-        <kbd>Ctrl K</kbd>
+        {searchText ? (
+          <button className="icon-button global-search__clear" type="button" aria-label="清除搜索关键词" title="清除搜索关键词（Esc）" onClick={() => { onSearchChange?.(''); searchRef.current?.focus(); }}><X size={14} aria-hidden="true" /></button>
+        ) : <kbd aria-hidden="true">Ctrl K</kbd>}
       </label>
 
       <div className="title-bar__actions">

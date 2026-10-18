@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { FolderOpen, ImagePlus, LoaderCircle, Save, Trash2, X } from 'lucide-react';
+import { FolderOpen, ImagePlus, LoaderCircle, Palette, Save, Trash2, Volume2, X } from 'lucide-react';
 
 import type { AppSettings, BackgroundSettings, PlayMode, ThemeId } from '../../../../shared/types';
 import { getTheme, THEMES } from '../../theme/themes';
 import { AppUpdatePanel } from './AppUpdatePanel';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 
 export interface AppearanceDraft {
   themeId: ThemeId;
@@ -46,6 +47,7 @@ export function SettingsPanel({ settings, onClose, onSelectFolder, onSelectBackg
   const [isCancelling, setIsCancelling] = useState(false);
   const [isPicking, setIsPicking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dialogRef = useDialogFocus(() => { void cancel(); });
 
   useEffect(() => {
     setLibraryPath(settings.libraryPath);
@@ -128,15 +130,23 @@ export function SettingsPanel({ settings, onClose, onSelectFolder, onSelectBackg
 
   return (
     <div className="modal-backdrop" role="presentation">
-      <section className="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title" data-testid="settings-panel">
-        <header className="settings-panel__header"><div><p className="eyebrow">PREFERENCES</p><h2 id="settings-title">设置</h2></div><button className="icon-button" type="button" aria-label="关闭设置" onClick={() => void cancel()} disabled={isSaving || isCancelling}><X size={18} aria-hidden="true" /></button></header>
+      <section ref={dialogRef} className="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title" tabIndex={-1} data-testid="settings-panel">
+        <header className="settings-panel__header"><div><p className="eyebrow">MAKE IT YOURS</p><h2 id="settings-title">设置</h2><p className="settings-panel__intro">整理音乐，也调整属于你的聆听空间。</p></div><button className="icon-button" type="button" aria-label="关闭设置" onClick={() => void cancel()} disabled={isSaving || isCancelling}><X size={18} aria-hidden="true" /></button></header>
         <div className="settings-panel__body">
+          <section className="settings-group" aria-labelledby="settings-library-title">
+          <div className="settings-group__heading"><FolderOpen size={18} aria-hidden="true" /><h3 id="settings-library-title">音乐库</h3></div>
           <label className="settings-field"><span>音乐库位置</span><div className="settings-field__path"><input value={libraryPath} onChange={(event) => setLibraryPath(event.target.value)} aria-label="音乐库位置" /><button className="button button--ghost" type="button" onClick={() => void chooseFolder()} disabled={isPicking || isSaving}>{isPicking ? <LoaderCircle className="spin" size={14} aria-hidden="true" /> : <FolderOpen size={14} aria-hidden="true" />}浏览</button></div></label>
           <div className="settings-library-actions"><small>更换目录时会扫描歌曲。仅修改外观、音量或播放模式会直接保存。</small><button className="button button--ghost" type="button" onClick={() => void save(true)} disabled={isPicking || isSaving || isCancelling}>重新扫描歌曲</button></div>
+          </section>
+          <section className="settings-group" aria-labelledby="settings-playback-title">
+          <div className="settings-group__heading"><Volume2 size={18} aria-hidden="true" /><h3 id="settings-playback-title">播放偏好</h3></div>
+          <div className="settings-playback-grid">
           <label className="settings-field"><span>默认音量 <strong>{Math.round(volume * 100)}%</strong></span><input className="settings-range" type="range" min={0} max={1} step={0.01} value={volume} onChange={(event) => setVolume(Number(event.target.value))} aria-label="默认音量" /></label>
           <label className="settings-field"><span>播放模式</span><select value={playMode} onChange={(event) => setPlayMode(event.target.value as PlayMode)} aria-label="播放模式">{modeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+          </div>
+          </section>
           <section className="appearance-settings" aria-labelledby="appearance-title">
-            <div className="settings-section-heading"><div><p className="eyebrow">APPEARANCE</p><h3 id="appearance-title">软件外观</h3></div></div>
+            <div className="settings-group__heading"><Palette size={18} aria-hidden="true" /><h3 id="appearance-title">软件外观</h3><span>选择主题，即时预览</span></div>
             <div className="theme-grid" role="radiogroup" aria-label="软件主题">
               {THEMES.map((theme) => (
                 <label

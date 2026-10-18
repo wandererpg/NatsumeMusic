@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, ChevronRight, Disc3, FolderOpen, Import, LibraryBig } from 'lucide-react';
+import { AlertCircle, ChevronRight, Disc3, Import, LibraryBig, Play } from 'lucide-react';
 
 import type { AppSettings, BulkTrackOperation, Game, GameMetadataSummary, GameUpdate, LibrarySection, PlayMode, Playlist, ScanResult, Track, TrackKind } from '../../shared/types';
 import { toCoverUrl } from '../../shared/cover-url';
@@ -469,7 +469,7 @@ export default function App({ onPlayTrack, playTrack: playTrackProp, playerState
   };
 
   const headerTitle = activeSection === 'library' && selectedGame ? selectedGame.name : activeSection === 'playlists' && selectedPlaylist ? selectedPlaylist.name : copy.title;
-  const headerDescription = activeSection === 'library' && selectedGame ? `${tracks.length} 首曲目` : copy.description;
+  const headerDescription = isLoadingTracks ? '正在读取曲目…' : `${tracks.length} 首曲目`;
   const gameCountLabel = `${games.length} 个游戏`;
   const effectiveAppearance = appearancePreview ?? { themeId: settings.themeId, background: settings.background, fontColor: settings.fontColor ?? null };
   const currentCoverPath = games.find(game => game.id === currentTrack?.gameId)?.coverPath ?? null;
@@ -519,11 +519,11 @@ export default function App({ onPlayTrack, playTrack: playTrackProp, playerState
           ) : (
             <div className="library-view" key={viewKey}>
               <section className={`library-heading${selectedGame && activeSection === 'library' ? ' library-heading--game' : ''}`}>
-                <div className="library-heading__crumbs">
-                  <span>我的音乐库</span>
+                <nav className="library-heading__crumbs" aria-label="当前位置">
+                  <button type="button" onClick={() => { setSearchText(''); selectSection('library'); }}>我的音乐库</button>
                   <ChevronRight size={13} aria-hidden="true" />
-                  <span className="library-heading__crumb-current">{copy.label}</span>
-                </div>
+                  <span className="library-heading__crumb-current" aria-current="page" title={headerTitle}>{headerTitle}</span>
+                </nav>
                 <div className="library-heading__main">
                   <div className="game-hero-cover" aria-hidden="true">
                     {selectedGame?.coverPath && activeSection === 'library' ? (
@@ -531,12 +531,15 @@ export default function App({ onPlayTrack, playTrack: playTrackProp, playerState
                     ) : <><span className="game-hero-cover__orb" />{selectedGame && activeSection === 'library' ? <span>{gameInitials(selectedGame.name)}</span> : <Disc3 size={42} strokeWidth={1.2} />}</>}
                   </div>
                   <div className="library-heading__copy">
-                    <p className="eyebrow">{selectedGame && activeSection === 'library' ? 'ORIGINAL SOUNDTRACK' : 'YOUR PERSONAL COLLECTION'}</p>
+                    <p className="eyebrow">{selectedGame && activeSection === 'library' ? 'ORIGINAL SOUNDTRACK' : 'MUSIC, MEMORIES & YOU'}</p>
                     <h1>{headerTitle}</h1>
+                    <p className="library-heading__description">{searchText ? `在当前分类中搜索「${searchText}」` : activeSection === 'library' && !selectedGame ? '让熟悉的旋律，带你回到故事里。' : selectedGame && activeSection === 'library' ? '收藏故事里的每一段旋律。' : copy.description}</p>
                     <div className="library-heading__stats"><span><Disc3 size={13} aria-hidden="true" />{headerDescription}</span><span className="stats-divider" /><span><LibraryBig size={13} aria-hidden="true" />{activeSection === 'library' && selectedGame ? `${totalMinutes} 分钟` : gameCountLabel}</span></div>
                   </div>
-                  {activeSection === 'library' && selectedGame && <button className="button button--ghost library-heading__import" type="button" onClick={() => { void openGameEditor(selectedGame); }}>编辑游戏</button>}
-                  {activeSection !== 'library' && <button className="button button--ghost library-heading__import" type="button" onClick={handleImport}><Import size={15} aria-hidden="true" />导入曲目</button>}
+                  <div className="library-heading__actions">
+                    <button className="button button--primary" type="button" disabled={isLoadingTracks || tracks.length === 0} onClick={() => tracks[0] && playTrack(tracks[0])}><Play size={15} fill="currentColor" aria-hidden="true" />播放全部</button>
+                    {activeSection === 'library' && selectedGame ? <button className="button button--ghost" type="button" onClick={() => { void openGameEditor(selectedGame); }}>编辑游戏</button> : <button className="button button--ghost" type="button" onClick={handleImport}><Import size={15} aria-hidden="true" />导入曲目</button>}
+                  </div>
                 </div>
               </section>
 
@@ -591,7 +594,7 @@ export default function App({ onPlayTrack, playTrack: playTrackProp, playerState
                 <section className="track-section" aria-labelledby="track-section-title">
                   <div className="track-section__heading">
                     <div><h2 id="track-section-title">{copy.title}</h2><span>{tracks.length} 首曲目</span></div>
-                    <div className="track-section__tools"><button className="icon-button icon-button--small" type="button" aria-label="打开曲目文件夹" title="打开曲目文件夹" onClick={() => currentTrack && void handleOpenFolder(currentTrack)}><FolderOpen size={15} aria-hidden="true" /></button></div>
+                    <span className="track-section__hint">双击曲目或按 Enter 播放</span>
                   </div>
                   {selectionEnabled && selectedTrackIds.size > 0 && (
                     <BulkTrackToolbar

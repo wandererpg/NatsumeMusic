@@ -172,6 +172,34 @@ describe('renderer shell', () => {
     await waitFor(() => expect(playTrack).toHaveBeenCalledWith(track));
   });
 
+  it('plays the first track from the current collection through the primary action', async () => {
+    mockGalMusic([game], [track]);
+    const onPlayTrack = vi.fn();
+    render(<App onPlayTrack={onPlayTrack} />);
+    await screen.findByTestId(`track-row-${track.id}`);
+
+    fireEvent.click(screen.getByRole('button', { name: '播放全部' }));
+    expect(onPlayTrack).toHaveBeenCalledWith(track);
+
+    window.galMusic.getTracks = vi.fn().mockResolvedValue([]);
+    fireEvent.click(screen.getByTestId('sidebar-nav-favorites'));
+    await waitFor(() => expect(screen.getByRole('button', { name: '播放全部' })).toBeDisabled());
+    fireEvent.click(screen.getByRole('button', { name: '播放全部' }));
+    expect(onPlayTrack).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns from a work to all music through the breadcrumb', async () => {
+    mockGalMusic([game], [track]);
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: `浏览 ${game.name} 的曲目` }));
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(game.name));
+    expect(screen.getByRole('navigation', { name: '当前位置' })).toHaveTextContent(game.name);
+
+    fireEvent.click(screen.getByRole('button', { name: '我的音乐库' }));
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('全部音乐'));
+    expect(window.galMusic.getTracks).toHaveBeenLastCalledWith(expect.objectContaining({ gameId: null, section: 'library', search: '' }));
+  });
+
   it('loads each sidebar collection with its own query instead of reusing the selected game', async () => {
     mockGalMusic([game], [track]);
     render(<App />);

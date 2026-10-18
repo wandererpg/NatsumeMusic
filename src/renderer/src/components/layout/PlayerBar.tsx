@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Pause,
+  Music2,
   Play,
   Repeat,
   Repeat1,
@@ -116,10 +117,10 @@ export function PlayerBar({
         <div className="player-bar__art" aria-hidden="true">
           {currentTrack && coverPath ? <img src={toCoverUrl(coverPath)} alt="" /> : currentTrack ? (
             <><span className="player-bar__art-orb" /><span className="player-bar__art-initials">{initials(currentTrack.displayName)}</span></>
-          ) : <span className="player-bar__art-empty">♫</span>}
+          ) : <Music2 className="player-bar__art-empty" size={24} strokeWidth={1.5} aria-hidden="true" />}
         </div>
         <div className="player-bar__track-copy">
-          <span className="player-bar__eyebrow">{currentTrack ? 'NOW PLAYING' : 'READY WHEN YOU ARE'}</span>
+          <span className="player-bar__eyebrow">{currentTrack ? '正在播放' : '从一首歌开始'}</span>
           <span className="player-bar__title" title={currentTrack?.displayName ?? undefined}>{currentTrack?.displayName ?? '尚未播放曲目'}</span>
           {currentTrack?.gameName && <span className="player-bar__work" title={currentTrack.gameName}>{currentTrack.gameName}</span>}
           <span className="player-bar__meta">
@@ -132,13 +133,13 @@ export function PlayerBar({
 
       <div className="player-bar__center">
         <div className="player-bar__controls">
-          <button className="icon-button" type="button" aria-label="上一首" title="上一首" onClick={onPrevious}>
+          <button className="icon-button" type="button" aria-label="上一首" title="上一首" disabled={!currentTrack} onClick={onPrevious}>
             <SkipBack size={17} fill="currentColor" aria-hidden="true" />
           </button>
-          <button className="player-bar__play" type="button" aria-label={isPlaying ? '暂停' : '播放'} title={isPlaying ? '暂停' : '播放'} onClick={toggle}>
+          <button className="player-bar__play" type="button" aria-label={isPlaying ? '暂停' : '播放'} title={currentTrack ? isPlaying ? '暂停' : '播放' : '请先选择一首曲目'} disabled={!currentTrack} onClick={toggle}>
             <span className="player-bar__play-glyph" key={isPlaying ? 'pause' : 'play'}>{isPlaying ? <Pause size={18} fill="currentColor" aria-hidden="true" /> : <Play size={18} fill="currentColor" aria-hidden="true" />}</span>
           </button>
-          <button className="icon-button" type="button" aria-label="下一首" title="下一首" onClick={onNext}>
+          <button className="icon-button" type="button" aria-label="下一首" title="下一首" disabled={!currentTrack} onClick={onNext}>
             <SkipForward size={17} fill="currentColor" aria-hidden="true" />
           </button>
         </div>
@@ -158,6 +159,7 @@ export function PlayerBar({
               max={100}
               step={0.1}
               value={progressPercent}
+              disabled={!currentTrack || !duration || duration <= 0}
               onPointerDown={() => setIsSeeking(true)}
               onPointerUp={() => setIsSeeking(false)}
               onBlur={() => setIsSeeking(false)}
