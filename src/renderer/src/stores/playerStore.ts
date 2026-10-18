@@ -5,6 +5,9 @@ import type { AppSettings, PlayMode, PlayerState, Track } from '../../../shared/
 import { PlayerEngine } from '../player/PlayerEngine';
 
 export interface PlayerStore extends PlayerState {
+  updateInstalling: boolean;
+  installUpdate: () => Promise<void>;
+  finishUpdatePreparation: () => void;
   /** The id is persisted separately from serializable playback state. */
   lastTrackId: string | null;
   error: unknown | null;
@@ -28,6 +31,7 @@ export interface PlayerStore extends PlayerState {
 }
 
 const DEFAULT_VOLUME = 0.8;
+let resumeAfterUpdateFailure = false;
 const DEFAULT_STATE: Pick<PlayerStore, 'currentTrack' | 'playlist' | 'playMode' | 'isPlaying' | 'volume' | 'progress' | 'duration' | 'currentTime' | 'lastTrackId' | 'error'> = {
   currentTrack: null,
   playlist: [],
@@ -116,6 +120,30 @@ export const playerEngine = new PlayerEngine({
 
 export const usePlayerStore = create<PlayerStore>((set, get) => ({
   ...DEFAULT_STATE,
+  updateInstalling: false,
+
+  installUpdate: async () => {
+    const api = getGalMusicApi();
+    if (!api?.installUpdate || get().updateInstalling) return;
+    const snapshot = { trackId: get().currentTrack?.id ?? null, currentTime: playerEngine.seek() };
+    resumeAfterUpdateFailure = get().isPlaying;
+    set({ updateInstalling: true });
+    playerEngine.pause();
+    try {
+      const result = await api.installUpdate(snapshot);
+      if (result.status !== 'preparing') throw new Error(result.message ?? '更新准备失败。');
+    } catch (error) {
+      get().finishUpdatePreparation();
+      throw error;
+    }
+  },
+
+  finishUpdatePreparation: () => {
+    if (!get().updateInstalling) return;
+    set({ updateInstalling: false });
+    if (resumeAfterUpdateFailure) playerEngine.play();
+    resumeAfterUpdateFailure = false;
+  },
 
   initialize: async () => {
     const api = getGalMusicApi();
@@ -128,10 +156,20 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     playerEngine.setVolume(volume);
     playerEngine.setPlayMode(playMode);
     set({ volume, playMode, lastTrackId: settings.lastTrackId ?? null, isPlaying: false });
+    const snapshot = await api.getPlaybackSnapshot?.();
+    if (snapshot?.trackId) {
+      const tracks = await api.getTracks({});
+      const index = tracks.findIndex((track) => track.id === snapshot.trackId);
+      if (index >= 0) {
+        get().setPlaylist(tracks, index);
+        playerEngine.seek(snapshot.currentTime);
+      }
+    }
     // Deliberately do not call play(): a restart restores preference only.
   },
 
   setPlaylist: (playlist, startIndex = 0) => {
+    if (get().updateInstalling) return;
     playerEngine.setQueue(playlist, startIndex, false);
     const selected = playlist[startIndex] ?? null;
     set({
@@ -146,6 +184,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   },
 
   playTrack: (track, playlist) => {
+    if (get().updateInstalling) return;
     if (playlist) {
       const index = playlist.findIndex((candidate) => candidate.id === track.id);
       playerEngine.setQueue(playlist, index >= 0 ? index : 0, true);
@@ -161,6 +200,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   },
 
   play: () => {
+    if (get().updateInstalling) return;
     playerEngine.play();
   },
 
@@ -169,14 +209,15 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   },
 
   toggle: () => {
+    if (get().updateInstalling) return;
     playerEngine.toggle();
   },
 
-  next: () => playerEngine.next(true),
+  next: () => get().updateInstalling ? null : playerEngine.next(true),
 
-  previous: () => playerEngine.previous(true),
+  previous: () => get().updateInstalling ? null : playerEngine.previous(true),
 
-  seek: (position) => playerEngine.seek(position),
+  seek: (position) => get().updateInstalling ? playerEngine.seek() : playerEngine.seek(position),
 
   setVolume: (volume) => {
     const nextVolume = playerEngine.setVolume(volume);
@@ -233,10 +274,11 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   },
 
   reset: () => {
+    resumeAfterUpdateFailure = false;
     playerEngine.setQueue([]);
     playerEngine.setVolume(DEFAULT_VOLUME);
     playerEngine.setPlayMode('sequential');
-    set({ ...DEFAULT_STATE });
+    set({ ...DEFAULT_STATE, updateInstalling: false });
   },
 
   dispose: () => {

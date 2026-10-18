@@ -344,6 +344,10 @@ describe('game-folder importer', () => {
     const metadata = {
       ensure: vi.fn().mockRejectedValue(new Error('offline')),
       getSummary: vi.fn(),
+      search: vi.fn(),
+      lookup: vi.fn(),
+      prepareUpdate: vi.fn(),
+      withGameLock: (_id, action) => action(),
       refresh: vi.fn(),
     } satisfies GameMetadataService;
     try {

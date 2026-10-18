@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ScanResult } from '../../src/renderer/src/components/scanner/ScanResult';
 import type { ScanResult as ScanResultState } from '../../src/shared/types';
@@ -23,7 +23,10 @@ describe('ScanResult metadata feedback', () => {
       },
     } as unknown as ScanResultState;
 
-    render(<ScanResult result={result} />);
+    const onSelectMetadata = vi.fn();
+    render(<ScanResult result={result} onSelectMetadata={onSelectMetadata} />);
+    fireEvent.click(screen.getByRole('button', { name: '选择作品 / 确认资料' }));
+    expect(onSelectMetadata).toHaveBeenCalledWith('g1');
 
     expect(screen.getByTestId('scan-result-metadata')).toBeInTheDocument();
     expect(screen.getByText('资料查询：部分失败')).toBeInTheDocument();

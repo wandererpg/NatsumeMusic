@@ -92,7 +92,7 @@ describe('database library service', () => {
     }
   });
 
-  it('invalidates cached source metadata when a game is renamed', async () => {
+  it('preserves the associated metadata identity when a game is renamed', async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), 'galmusic-game-metadata-invalidate-'));
     const library = path.join(root, 'library');
     const db = new Database(':memory:');
@@ -110,7 +110,8 @@ describe('database library service', () => {
       const service = createDatabaseLibraryService(db, { getLibraryPath: () => library });
       await service.updateGame?.('g-meta', { name: 'New Game' });
 
-      expect(getGameSources(db, 'g-meta')).toEqual([]);
+      expect(getGameSources(db, 'g-meta')).toHaveLength(1);
+    expect(getGameSources(db, 'g-meta')[0]).toMatchObject({ externalId: 'v17', status: 'matched' });
     } finally {
       db.close();
       await rm(root, { recursive: true, force: true });
@@ -133,6 +134,10 @@ describe('database library service', () => {
     const metadata: GameMetadataService = {
       getSummary: vi.fn().mockReturnValue(pending),
       ensure: vi.fn().mockResolvedValue(complete),
+      search: vi.fn(),
+      lookup: vi.fn(),
+      prepareUpdate: vi.fn(),
+      withGameLock: (_id, action) => action(),
       refresh: vi.fn().mockResolvedValue(complete),
     };
     const service = createDatabaseLibraryService(db, { metadata });

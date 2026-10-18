@@ -1,4 +1,6 @@
 import type {
+  AppUpdateState,
+  PlaybackSnapshot,
   AddTracksRequest,
   AppSettings,
   AppSettingsUpdate,
@@ -6,6 +8,8 @@ import type {
   BulkTrackResult,
   Game,
   GameMetadataSummary,
+  MetadataSearchResult,
+  MetadataSource,
   GameUpdate,
   PlayerErrorListener,
   PlayerState,
@@ -43,6 +47,9 @@ export const LIBRARY_REMOVE_TRACK_FROM_PLAYLIST = 'library:remove-track-from-pla
 export const LIBRARY_UPDATE_GAME = 'library:update-game' as const;
 export const LIBRARY_GET_GAME_METADATA = 'library:get-game-metadata' as const;
 export const LIBRARY_REFRESH_GAME_METADATA = 'library:refresh-game-metadata' as const;
+export const LIBRARY_SEARCH_GAME_METADATA = 'library:search-game-metadata' as const;
+export const LIBRARY_LOOKUP_GAME_METADATA = 'library:lookup-game-metadata' as const;
+export const LIBRARY_OPEN_METADATA_LINK = 'library:open-metadata-link' as const;
 export const LIBRARY_DELETE_GAME = 'library:delete-game' as const;
 export const LIBRARY_BULK_UPDATE_TRACKS = 'library:bulk-update-tracks' as const;
 export const DIALOG_SELECT_FOLDER = 'dialog:select-folder' as const;
@@ -56,6 +63,13 @@ export const APP_CANCEL_APPEARANCE_PREVIEW = 'app:cancel-appearance-preview' as 
 export const WINDOW_MINIMIZE = 'window:minimize' as const;
 export const WINDOW_TOGGLE_MAXIMIZE = 'window:toggle-maximize' as const;
 export const WINDOW_CLOSE = 'window:close' as const;
+export const UPDATE_GET_STATE = 'update:get-state' as const;
+export const UPDATE_CHECK = 'update:check' as const;
+export const UPDATE_DOWNLOAD = 'update:download' as const;
+export const UPDATE_INSTALL = 'update:install' as const;
+export const UPDATE_STATE = 'update:state' as const;
+export const UPDATE_GET_PLAYBACK = 'update:get-playback' as const;
+export const UPDATE_OPEN_DOWNLOADS = 'update:open-downloads' as const;
 
 // Push/event channels
 export const SCAN_PROGRESS = 'scan:progress' as const;
@@ -66,6 +80,12 @@ export const PLAYER_ERROR = 'player:error' as const;
 
 /** Request channels grouped for handler registration. */
 export const IPC_REQUESTS = {
+  updateGetState: UPDATE_GET_STATE,
+  updateCheck: UPDATE_CHECK,
+  updateDownload: UPDATE_DOWNLOAD,
+  updateInstall: UPDATE_INSTALL,
+  updateGetPlayback: UPDATE_GET_PLAYBACK,
+  updateOpenDownloads: UPDATE_OPEN_DOWNLOADS,
   scanStart: SCAN_START,
   scanCancel: SCAN_CANCEL,
   libraryGetGames: LIBRARY_GET_GAMES,
@@ -82,6 +102,9 @@ export const IPC_REQUESTS = {
   libraryUpdateGame: LIBRARY_UPDATE_GAME,
   libraryGetGameMetadata: LIBRARY_GET_GAME_METADATA,
   libraryRefreshGameMetadata: LIBRARY_REFRESH_GAME_METADATA,
+  librarySearchGameMetadata: LIBRARY_SEARCH_GAME_METADATA,
+  libraryLookupGameMetadata: LIBRARY_LOOKUP_GAME_METADATA,
+  libraryOpenMetadataLink: LIBRARY_OPEN_METADATA_LINK,
   libraryDeleteGame: LIBRARY_DELETE_GAME,
   libraryBulkUpdateTracks: LIBRARY_BULK_UPDATE_TRACKS,
   dialogSelectFolder: DIALOG_SELECT_FOLDER,
@@ -99,6 +122,7 @@ export const IPC_REQUESTS = {
 
 /** Event channels grouped for preload subscriptions. */
 export const IPC_EVENTS = {
+  updateState: UPDATE_STATE,
   scanProgress: SCAN_PROGRESS,
   scanResult: SCAN_RESULT,
   playerStateChange: PLAYER_STATE_CHANGE,
@@ -133,6 +157,9 @@ export const IPC_LIBRARY_REMOVE_TRACK_FROM_PLAYLIST = LIBRARY_REMOVE_TRACK_FROM_
 export const IPC_LIBRARY_UPDATE_GAME = LIBRARY_UPDATE_GAME;
 export const IPC_LIBRARY_GET_GAME_METADATA = LIBRARY_GET_GAME_METADATA;
 export const IPC_LIBRARY_REFRESH_GAME_METADATA = LIBRARY_REFRESH_GAME_METADATA;
+export const IPC_LIBRARY_SEARCH_GAME_METADATA = LIBRARY_SEARCH_GAME_METADATA;
+export const IPC_LIBRARY_LOOKUP_GAME_METADATA = LIBRARY_LOOKUP_GAME_METADATA;
+export const IPC_LIBRARY_OPEN_METADATA_LINK = LIBRARY_OPEN_METADATA_LINK;
 export const IPC_LIBRARY_DELETE_GAME = LIBRARY_DELETE_GAME;
 export const IPC_LIBRARY_BULK_UPDATE_TRACKS = LIBRARY_BULK_UPDATE_TRACKS;
 export const IPC_DIALOG_SELECT_FOLDER = DIALOG_SELECT_FOLDER;
@@ -157,6 +184,13 @@ export type IpcRequestChannel = (typeof IPC_REQUESTS)[keyof typeof IPC_REQUESTS]
 export type IpcEventChannel = (typeof IPC_EVENTS)[keyof typeof IPC_EVENTS];
 
 export interface GalMusicAPI {
+  getUpdateState?: () => Promise<AppUpdateState>;
+  checkForUpdates?: () => Promise<AppUpdateState>;
+  downloadUpdate?: () => Promise<AppUpdateState>;
+  installUpdate?: (snapshot: PlaybackSnapshot) => Promise<AppUpdateState>;
+  onUpdateState?: (listener: (state: AppUpdateState) => void) => Unsubscribe;
+  getPlaybackSnapshot?: () => Promise<PlaybackSnapshot | null>;
+  openUpdateDownloads?: () => Promise<void>;
   startScan(options: ScanStartRequest): Promise<string>;
   cancelScan(requestId: string): Promise<void>;
 
@@ -174,6 +208,9 @@ export interface GalMusicAPI {
   updateGame?: (gameId: string, changes: GameUpdate) => Promise<Game>;
   getGameMetadata?: (gameId: string) => Promise<GameMetadataSummary>;
   refreshGameMetadata?: (gameId: string) => Promise<GameMetadataSummary>;
+  searchGameMetadata?: (gameId: string, source: MetadataSource, query: string) => Promise<MetadataSearchResult>;
+  lookupGameMetadata?: (gameId: string, source: MetadataSource, input: string) => Promise<MetadataSearchResult>;
+  openMetadataLink?: (source: MetadataSource, externalId: string) => Promise<void>;
   deleteGame?: (gameId: string) => Promise<void>;
   bulkUpdateTracks(request: BulkTrackRequest): Promise<BulkTrackResult>;
 

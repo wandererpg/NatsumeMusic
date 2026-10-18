@@ -5,7 +5,7 @@ import type Database from 'better-sqlite3';
  * small migrations table.  Keeping both makes the database easy to inspect
  * and gives us a place to add non-destructive migrations in future releases.
  */
-export const LATEST_SCHEMA_VERSION = 5;
+export const LATEST_SCHEMA_VERSION = 7;
 
 type SQLiteDatabase = Database.Database;
 
@@ -137,6 +137,26 @@ export function migrate(db: SQLiteDatabase): void {
         );
       `);
       db.prepare('INSERT OR IGNORE INTO schema_migrations (version) VALUES (?)').run(5);
+    }
+
+    // Version 6 was also used by databases without metadata selection columns.
+    // Give this change its own version and tolerate development databases that
+    // already have some or all of these columns.
+    if (userVersion < 7) {
+      const columns = db.prepare('PRAGMA table_info(game_sources)').all() as Array<{ name: string }>;
+      const additions = {
+        match_method: "TEXT CHECK (match_method IN ('auto', 'manual'))",
+        confirmed_at: 'TEXT', revision: 'INTEGER NOT NULL DEFAULT 0',
+        search_status: 'TEXT', search_error: 'TEXT', search_fetched_at: 'TEXT',
+      };
+      for (const [name, definition] of Object.entries(additions)) {
+        if (!columns.some(column => column.name === name)) db.exec(`ALTER TABLE game_sources ADD COLUMN ${name} ${definition}`);
+      }
+      db.exec("UPDATE game_sources SET match_method = 'auto' WHERE status = 'matched' AND match_method IS NULL");
+      if (userVersion < 6) {
+        db.prepare('INSERT OR IGNORE INTO schema_migrations (version) VALUES (?)').run(6);
+      }
+      db.prepare('INSERT OR IGNORE INTO schema_migrations (version) VALUES (?)').run(7);
     }
 
     db.pragma(`user_version = ${LATEST_SCHEMA_VERSION}`);

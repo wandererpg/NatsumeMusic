@@ -5,6 +5,7 @@ import { PlayerEngine } from '../../src/renderer/src/player/PlayerEngine';
 import { playerEngine, usePlayerStore } from '../../src/renderer/src/stores/playerStore';
 
 type HowlCallbacks = {
+  onload?: () => void;
   onplay?: () => void;
   onpause?: () => void;
   onend?: () => void;
@@ -40,6 +41,37 @@ const { MockHowl } = vi.hoisted(() => {
     }
   }
   return { MockHowl: HoistedMockHowl };
+});
+
+describe('playback during update installation', () => {
+  beforeEach(() => { usePlayerStore.getState().reset(); MockHowl.instances.length = 0; });
+  it('restores the update snapshot without starting playback', async () => {
+    const saved = track('saved', 'C:/Music/saved.ogg');
+    (globalThis as { window?: Window }).window = { galMusic: {
+      getSettings: vi.fn(async () => ({ volume: 0.4, playMode: 'list-loop', lastTrackId: 'saved' })),
+      setSetting: vi.fn(async () => undefined),
+      getPlaybackSnapshot: vi.fn(async () => ({ trackId: 'saved', currentTime: 42 })),
+      getTracks: vi.fn(async () => [saved]),
+    } } as unknown as Window;
+    await usePlayerStore.getState().initialize();
+    expect(usePlayerStore.getState().currentTrack?.id).toBe('saved');
+    expect(MockHowl.instances[0].seek).toHaveBeenCalledWith(42);
+    expect(MockHowl.instances[0].play).not.toHaveBeenCalled();
+    expect(usePlayerStore.getState().isPlaying).toBe(false);
+  });
+  it('pauses and blocks new playback during preparation, then resumes on rejection', async () => {
+    let reject!: (error: Error) => void;
+    const install = vi.fn(() => new Promise<never>((_resolve, failure) => { reject = failure; }));
+    (globalThis as { window?: Window }).window = { galMusic: { setSetting: vi.fn(async () => undefined), installUpdate: install } } as unknown as Window;
+    usePlayerStore.getState().playTrack(track('one', 'C:/Music/one.ogg'));
+    const request = usePlayerStore.getState().installUpdate();
+    expect(usePlayerStore.getState().isPlaying).toBe(false);
+    usePlayerStore.getState().playTrack(track('two', 'C:/Music/two.ogg'));
+    expect(usePlayerStore.getState().currentTrack?.id).toBe('one');
+    reject(new Error('备份失败'));
+    await expect(request).rejects.toThrow('备份失败');
+    expect(usePlayerStore.getState().isPlaying).toBe(true);
+  });
 });
 
 vi.mock('howler', () => ({ Howl: MockHowl }));

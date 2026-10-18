@@ -19,7 +19,7 @@ describe('game metadata source queries', () => {
     db.pragma('user_version = 4');
     migrate(db);
 
-    expect(db.pragma('user_version', { simple: true })).toBe(5);
+    expect(db.pragma('user_version', { simple: true })).toBe(7);
     expect(getGame(db, 'g1')?.coverSource).toBe('manual');
     expect(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'game_sources'").get()).toEqual({ name: 'game_sources' });
     db.close();

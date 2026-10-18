@@ -12,6 +12,8 @@ import {
   IPC_LIBRARY_GET_TRACKS,
   IPC_LIBRARY_GET_GAME_METADATA,
   IPC_LIBRARY_REFRESH_GAME_METADATA,
+  IPC_LIBRARY_SEARCH_GAME_METADATA,
+  IPC_LIBRARY_LOOKUP_GAME_METADATA,
   IPC_LIBRARY_UPDATE_GAME,
   IPC_SCAN_CANCEL,
   IPC_SCAN_START,
@@ -46,6 +48,26 @@ class FakeIpcMain {
 }
 
 describe('main-process IPC handlers', () => {
+  it('validates source, query and candidate selection before passing changes to the library', async () => {
+    const ipcMain = new FakeIpcMain();
+    const library = { getGames: vi.fn(), getTracks: vi.fn(), searchGameMetadata: vi.fn(), lookupGameMetadata: vi.fn(), updateGame: vi.fn() };
+    registerLibraryHandlers({ ipcMain, library });
+    await ipcMain.invoke(IPC_LIBRARY_SEARCH_GAME_METADATA, 'g1', 'vndb', 'Title');
+    await ipcMain.invoke(IPC_LIBRARY_LOOKUP_GAME_METADATA, 'g1', 'bangumi', '123');
+    expect(library.searchGameMetadata).toHaveBeenCalledWith('g1', 'vndb', 'Title');
+    expect(library.lookupGameMetadata).toHaveBeenCalledWith('g1', 'bangumi', '123');
+    for (const args of [['g1', 'unknown', 'Title'], ['g1', 'vndb', ''], ['g1', 'vndb', 'x'.repeat(501)], ['g1', 'vndb', 'Title', 'extra']]) {
+      await expect(ipcMain.invoke(IPC_LIBRARY_SEARCH_GAME_METADATA, ...args)).rejects.toMatchObject({ code: 'DB_ERROR' });
+    }
+    const selection = { source: 'vndb', candidateId: 'a'.repeat(64), expectedRevision: 1 };
+    await ipcMain.invoke(IPC_LIBRARY_UPDATE_GAME, 'g1', { metadataSelections: [selection] });
+    expect(library.updateGame).toHaveBeenCalledWith('g1', { metadataSelections: [selection] });
+    library.updateGame.mockClear();
+    for (const changes of [{ metadataSelections: [selection, selection] }, { metadataSelections: [{ ...selection, candidateId: 'invalid' }] }, { metadataSelections: [{ ...selection, expectedRevision: -1 }] }, { coverPath: null, coverSelection: 'vndb' }]) {
+      await expect(ipcMain.invoke(IPC_LIBRARY_UPDATE_GAME, 'g1', changes)).rejects.toMatchObject({ code: 'DB_ERROR' });
+    }
+    expect(library.updateGame).not.toHaveBeenCalled();
+  });
   it('offers OWP files in the audio file picker', async () => {
     const ipcMain = new FakeIpcMain();
     const dialog = { showOpenDialog: vi.fn().mockResolvedValue({ canceled: false, filePaths: [] }) };
@@ -269,6 +291,38 @@ describe('main-process IPC handlers', () => {
     registerLibraryHandlers({ ipcMain, library, appearanceAuthorization: authorization });
     await ipcMain.invoke(IPC_APP_CANCEL_APPEARANCE_PREVIEW);
     expect(authorization.previewBackgroundPath).toBeNull();
+  });
+
+  it.each([null, '#ff77aa', undefined])('saves a changed music directory with fontColor %s', async (fontColor) => {
+    const ipcMain = new FakeIpcMain();
+    const saved = {
+      libraryPath: 'C:/Music/GalMusic', volume: 0.8, playMode: 'list-loop',
+      lastTrackId: null, voiceThresholdSeconds: 25, themeId: 'rain-afterglow',
+      background: { imagePath: null, blur: 12, dim: 0.42, scale: 100, positionX: 50, positionY: 50 },
+    } as const;
+    const changes = { ...saved, libraryPath: 'D:/Music/NatsumeMusic', fontColor, rescanLibrary: true };
+    const { lastTrackId, voiceThresholdSeconds, ...request } = changes;
+    const library = {
+      getGames: vi.fn(), getTracks: vi.fn(), getSettings: vi.fn().mockResolvedValue(saved),
+      saveSettings: vi.fn(),
+    };
+    registerLibraryHandlers({ ipcMain, library });
+
+    await expect(ipcMain.invoke(IPC_APP_SAVE_SETTINGS, request)).resolves.toBeUndefined();
+    expect(library.saveSettings).toHaveBeenCalledWith(request);
+  });
+
+  it.each(['red', '#12345', 123, {}])('rejects invalid fontColor %j before saving settings', async (fontColor) => {
+    const ipcMain = new FakeIpcMain();
+    const library = { getGames: vi.fn(), getTracks: vi.fn(), saveSettings: vi.fn() };
+    registerLibraryHandlers({ ipcMain, library });
+
+    await expect(ipcMain.invoke(IPC_APP_SAVE_SETTINGS, {
+      libraryPath: 'D:/Music/NatsumeMusic', volume: 0.8, playMode: 'list-loop',
+      themeId: 'rain-afterglow', fontColor,
+      background: { imagePath: null, blur: 12, dim: 0.42, scale: 100, positionX: 50, positionY: 50 },
+    })).rejects.toMatchObject({ code: 'DB_ERROR' });
+    expect(library.saveSettings).not.toHaveBeenCalled();
   });
 
   it('routes one valid bulk-track request unchanged to the library service', async () => {

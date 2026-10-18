@@ -12,6 +12,7 @@ type ScanPhase = 'idle' | 'running' | 'completed' | 'error';
 export interface ScanDialogProps {
   onClose: () => void;
   onCompleted?: (result: ScanResult) => void | Promise<void>;
+  onSelectMetadata?: (gameId: string) => void | Promise<void>;
   defaultDeepScan?: boolean;
 }
 
@@ -34,7 +35,7 @@ function toScanError(error: unknown): string {
   return error instanceof Error ? error.message : '导入失败，请稍后重试。';
 }
 
-export function ScanDialog({ onClose, onCompleted, defaultDeepScan = true }: ScanDialogProps) {
+export function ScanDialog({ onClose, onCompleted, onSelectMetadata, defaultDeepScan = true }: ScanDialogProps) {
   const [sourcePath, setSourcePath] = useState('');
   const [gameName, setGameName] = useState('');
   const [deepScan, setDeepScan] = useState(defaultDeepScan);
@@ -172,7 +173,7 @@ export function ScanDialog({ onClose, onCompleted, defaultDeepScan = true }: Sca
         </header>
 
         {phase === 'completed' && result ? (
-          <ScanResultView result={result} onClose={onClose} onRetry={() => { setPhase('idle'); setResult(null); setProgress(null); }} />
+          <ScanResultView result={result} onClose={onClose} onSelectMetadata={onSelectMetadata} onRetry={() => { setPhase('idle'); setResult(null); setProgress(null); }} />
         ) : (
           <>
             <div className="scan-dialog__body">

@@ -1,6 +1,6 @@
 {
   "name": "galmusic",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "private": true,
   "main": "./out/main/index.js",
   "scripts": {
@@ -16,7 +16,9 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.1",
+    "animejs": "^4.4.0",
     "better-sqlite3": "^11.3.0",
+    "electron-updater": "6.8.9",
     "howler": "^2.2.4",
     "lucide-react": "^0.468.0",
     "music-metadata": "^10.7.0",

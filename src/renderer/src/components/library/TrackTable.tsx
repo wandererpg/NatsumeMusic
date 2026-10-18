@@ -188,10 +188,10 @@ export function TrackTable({
               </th>
             )}
             <th scope="col" className="track-table__index">#</th>
-            <th scope="col">曲目</th>
-            <th scope="col">格式</th>
-            <th scope="col">时长</th>
-            <th scope="col">大小</th>
+            <th scope="col" className="track-table__title">曲目</th>
+            <th scope="col" className="track-table__format">格式</th>
+            <th scope="col" className="track-table__duration">时长</th>
+            <th scope="col" className="track-table__size">大小</th>
             <th scope="col" className="track-table__actions"><span className="sr-only">操作</span></th>
           </tr>
         </thead>

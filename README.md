@@ -2,21 +2,50 @@
 
 NatsumeMusic 是一款面向 Windows 的 Galgame 音乐导入、整理与播放工具。选择游戏目录后，它可以递归扫描普通音频和常见资源包，把音乐复制到独立音乐库；即使原游戏之后被移动或删除，音乐库仍然可以离线播放。
 
-当前发布版本：`0.1.0` · Windows x64 · Electron
+当前开发版本：`0.1.2` · Windows x64 · Electron。已发布版本以 GitHub Releases 为准。
+
+## 源码开发与资料确认
+
+日常修改使用 Electron + Vite 开发版。在 PowerShell 执行：
+
+```powershell
+Set-Location -LiteralPath 'D:\Codex\galgame music app\galgame-music-app'
+npm run dev
+```
+
+首次准备依赖时先运行 `npm install`。开发命令会启动 Vite 和 Electron 窗口，前端修改会自动刷新；主进程或接口修改后如未生效，按 `Ctrl+C` 停止后重新运行。开发过程不生成安装包，已安装的 EXE 不会随源码修改自动更新。
+
+进入“编辑游戏 → 网络资料”，分别点击 VNDB / Bangumi 的“选择作品”或“更换匹配”。可查看缓存候选、重新搜索名称，或输入官方作品链接 / ID。选择条目后查看预览，点击“使用此作品”，最后点击“保存更改”才持久化为“已手动确认”。取消选择或关闭编辑器不会改变已保存关联。导入完成页也提供“选择作品 / 确认资料”入口。
+
+“更新已关联资料”按作品 ID 更新，改名后仍保留关联。默认保留当前封面；只有明确选择“使用 VNDB / Bangumi 封面”才更换。封面下载失败时仍保存作品关联、保留旧封面，并显示重试提示。选择了本地封面后，可用“撤销封面更改”恢复网络封面选项。
+
+交互参考仓库 [ReinaManager](https://github.com/huoshen80/ReinaManager) 已克隆到工作区的同名目录，仅参考交互设计，未复制其业务代码或素材。
+
+资料搜索、保存和刷新失败时会显示具体错误原因。若提示“正在切换并扫描音乐库”，请等扫描完成再重试；若提示当前应用未加载资料更新功能，请退出正在运行的开发应用，并在启动它的终端按 `Ctrl+C` 后重新运行 `npm run dev`。重新启动前先关闭旧开发窗口，避免依赖重建时提示文件被占用。
 
 ## 下载与安装
 
-GitHub Release 建议上传下面两个压缩包和校验文件：
+正式发布时上传安装器、更新元数据、便携包和校验文件：
 
 | 文件 | 用途 |
 | --- | --- |
-| `NatsumeMusic-0.1.0-windows-x64-installer.zip` | 安装版。解压后运行 `NatsumeMusic-0.1.0-installer/NatsumeMusic-0.1.0-x64.exe`，可以选择安装目录，并创建桌面/开始菜单快捷方式。 |
-| `NatsumeMusic-0.1.0-windows-x64-portable.zip` | 便携版。解压后直接运行 `NatsumeMusic-0.1.0-portable/NatsumeMusic.exe`，不会执行安装流程。 |
-| `SHA256SUMS.txt` | 两个 ZIP 的 SHA-256 校验值。 |
+| `NatsumeMusic-0.1.2-x64.exe` | 安装版，可以选择安装目录，并创建桌面/开始菜单快捷方式。 |
+| `NatsumeMusic-0.1.2-x64.exe.blockmap`、`latest.yml` | 安装版自动更新所需，必须与对应 EXE 一起发布。 |
+| `NatsumeMusic-0.1.2-windows-x64-portable.zip` | 便携版。解压后运行文件夹内的 `NatsumeMusic.exe`。 |
+| `SHA256SUMS.txt` | 发布文件的 SHA-256 校验值。 |
 
 便携版不能只拿出一个 `NatsumeMusic.exe` 使用，必须保留旁边的 `resources` 文件夹。安装版和便携版使用同一套应用数据；更新前请先关闭正在运行的旧版 NatsumeMusic。
 
+已安装 0.1.0 的用户需要手动运行一次 0.1.1 安装器，选择原安装目录。之后在「设置 → 关于与更新」中检查、下载新版本，点击「重启更新」安装。音乐库、歌单与设置会保留；重启后恢复上一首歌曲和进度并保持暂停。便携版继续手动更新。操作及发布流程见 [更新说明](docs/auto-update.md)。
+
 ## 功能
+
+### 选择已有歌曲的音乐目录
+
+在「设置」中更换音乐库目录并保存，应用会递归识别普通音频，刷新作品和歌曲列表。文件保持原位置；相同内容的歌曲会重新关联，保留收藏、曲目名称和歌单。新增或改名歌曲后，点击「重新扫描歌曲」。只修改外观、音量或播放模式时直接保存，不扫描音乐文件。
+
+当前库只显示所选目录内仍存在的歌曲，旧目录的独有记录会保留。扫描目录中的作品重命名只修改显示名称；删除作品只删除当前库对应的音频，不删除游戏程序、存档或其他文件。NWA/OWP 转换及资源包提取仍需使用游戏导入流程。
+
 
 - 递归扫描游戏目录中的 `.ogg`、`.mp3`、`.wav`、`.flac`、`.m4a`、`.aac`、`.opus`、`.wma`、`.owp` 和 VisualArt/RealLive `.nwa`。
 - 导入 `.nwa` 时通过随包提供的 GARbro NWA bridge 自动转换为标准 `.wav`；原始游戏文件保持不变。
@@ -75,12 +104,16 @@ GitHub Release 建议上传下面两个压缩包和校验文件：
 
 ## 开发与自行打包
 
+日常修改使用现有 Electron + Vite 开发模式，按改动范围进行必要验证。仅在明确要求打包 EXE 或准备发布安装包时生成发布产物；版本号在准备发布时统一更新。
+
 环境要求：Node.js 20+、Windows x64，以及可正常运行的 npm。
 
 ```powershell
 npm install
 npm run dev
 ```
+
+开发模式下，界面修改由 Vite 热更新；涉及 Electron 主进程或预加载脚本的修改需要重新加载或重启开发应用。已安装版本需通过安装包或已发布的更新获得新代码。
 
 验证代码、资源和生产构建：
 
@@ -135,6 +168,6 @@ npm run package:win
 
 1. 将源码、`README.md`、必要的许可证和第三方声明放在仓库根目录。
 2. 不要把 `node_modules`、`out`、旧的 `release-v*` 构建目录或用户音乐库提交到源码仓库。
-3. 创建 GitHub Release，建议使用标签 `v0.1.0`。
-4. 在 Release Assets 中上传 `NatsumeMusic-0.1.0-windows-x64-installer.zip`、`NatsumeMusic-0.1.0-windows-x64-portable.zip` 和 `SHA256SUMS.txt`。
+3. 当前准备版本为 `0.2.1`，创建 GitHub Release 时使用标签 `v0.2.1`；发布说明见 [`docs/releases/0.2.1.md`](docs/releases/0.2.1.md)。
+4. 在 Release Assets 中分别上传 `NatsumeMusic-0.2.1-x64.exe`、对应 `.exe.blockmap`、`latest.yml`、`NatsumeMusic-0.2.1-windows-x64-portable.zip` 和 `SHA256SUMS.txt`。若使用汇总包 `NatsumeMusic-0.2.1-release-assets.zip`，先解压再上传，确保应用可以直接访问更新文件。
 5. 发布前确认 GARbro 和其他随包第三方组件的许可证、版权声明及再分发条件；如需要，请把对应的 `LICENSE`/`NOTICE` 文件一并放入仓库和发布说明。

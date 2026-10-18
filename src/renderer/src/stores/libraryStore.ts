@@ -1,3 +1,4 @@
+import { getErrorMessage as readErrorMessage } from '../../../shared/errors';
 import { create } from 'zustand';
 
 import type { GalMusicAPI } from '../../../shared/ipc';
@@ -11,13 +12,7 @@ function api(): GalMusicAPI | null {
 }
 
 function getErrorMessage(error: unknown): string {
-  if (typeof error === 'object' && error !== null && 'userMessage' in error) {
-    const userMessage = (error as { userMessage?: unknown }).userMessage;
-    if (typeof userMessage === 'string') {
-      return userMessage;
-    }
-  }
-  return error instanceof Error ? error.message : '无法加载音乐库';
+  return readErrorMessage(error, '无法加载音乐库');
 }
 
 export interface LibraryStore {

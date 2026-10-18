@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from '../../src/renderer/src/App';
@@ -116,13 +116,39 @@ describe('renderer shell', () => {
     expect(screen.queryByText('仅保存在本机')).not.toBeInTheDocument();
   });
 
-  it('mounts one shared SVG refraction definition for the liquid-glass table header', async () => {
+  it('opens a work from its cover and returns to all music through navigation', async () => {
     mockGalMusic([game], [track]);
     render(<App />);
 
-    const defs = await screen.findByTestId('liquid-glass-defs');
-    expect(defs.querySelector('#natsume-liquid-refraction')).toBeInTheDocument();
-    expect(defs.querySelector('feDisplacementMap')).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: `浏览 ${game.name} 的曲目` }));
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(game.name));
+    expect(screen.queryByRole('button', { name: `浏览 ${game.name} 的曲目` })).not.toBeInTheDocument();
+    expect(screen.getByTestId(`game-item-${game.id}`)).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByTestId('sidebar-nav-library')).not.toHaveAttribute('aria-current');
+    fireEvent.click(screen.getByTestId('sidebar-nav-library'));
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('全部音乐'));
+    expect(screen.getByRole('button', { name: `浏览 ${game.name} 的曲目` })).toBeInTheDocument();
+    expect(screen.getByTestId('sidebar-nav-library')).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('starts navigation reads immediately and shows loading instead of the previous songs', async () => {
+    mockGalMusic([game], [track]);
+    render(<App />);
+    await screen.findByText(track.displayName);
+    let resolveTracks!: (tracks: Track[]) => void;
+    const getTracks = vi.fn(() => new Promise<Track[]>(resolve => { resolveTracks = resolve; }));
+    window.galMusic.getTracks = getTracks;
+    const favorites = screen.getByTestId('sidebar-nav-favorites');
+    // Keyboard navigation has no exit delay, isolating the data-read delay.
+    fireEvent.keyDown(favorites, { key: 'Enter' });
+    fireEvent.click(favorites);
+    expect(getTracks).toHaveBeenCalledWith(expect.objectContaining({ section: 'favorites' }));
+    expect(screen.queryByText(track.displayName)).not.toBeInTheDocument();
+    expect(screen.getByRole('status', { name: '正在读取曲目' })).toBeInTheDocument();
+    expect(await screen.findByText('正在读取曲目…')).toBeInTheDocument();
+    await act(async () => resolveTracks([{ ...track, displayName: 'Favorite song', isFavorite: true }]));
+    expect(await screen.findByText('Favorite song')).toBeInTheDocument();
+    expect(screen.queryByRole('status', { name: '正在读取曲目' })).not.toBeInTheDocument();
   });
 
   it('places the track table inside the single right-side main content scroller', async () => {

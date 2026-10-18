@@ -1,11 +1,14 @@
+import { getErrorMessage } from '../../../../shared/errors';
 import { AlertTriangle, CheckCircle2, Copy, FileAudio, FolderArchive, Globe2, ImageDown, SkipForward, X } from 'lucide-react';
 
+import { useState } from 'react';
 import type { GameMetadataSummary, MetadataSource, MetadataStatus, ScanResult as ScanResultState } from '../../../../shared/types';
 
 export interface ScanResultProps {
   result: ScanResultState;
   onClose?: () => void;
   onRetry?: () => void;
+  onSelectMetadata?: (gameId: string) => void | Promise<void>;
 }
 
 const sourceLabels: Record<MetadataSource, string> = { vndb: 'VNDB', bangumi: 'Bangumi' };
@@ -35,7 +38,9 @@ function coverOutcome(metadata: GameMetadataSummary): string {
   return '未添加（没有可用资料）';
 }
 
-export function ScanResult({ result, onClose, onRetry }: ScanResultProps) {
+export function ScanResult({ result, onClose, onRetry, onSelectMetadata }: ScanResultProps) {
+  const [error, setError] = useState<string | null>(null);
+  const [opening, setOpening] = useState(false);
   return (
     <section className="scan-result" data-testid="scan-result" aria-live="polite">
       <div className="scan-result__hero" aria-hidden="true">
@@ -67,6 +72,11 @@ export function ScanResult({ result, onClose, onRetry }: ScanResultProps) {
             ))}
           </div>
           <div className="scan-result__cover-outcome"><ImageDown size={14} aria-hidden="true" /><span>{`封面：${coverOutcome(result.metadata)}`}</span></div>
+          {onSelectMetadata && <button className="button button--ghost button--small" type="button" disabled={opening} onClick={() => {
+            setOpening(true); setError(null);
+            Promise.resolve(onSelectMetadata(result.metadata!.gameId)).catch(reason => setError(getErrorMessage(reason, '打开资料编辑失败，请重试。'))).finally(() => setOpening(false));
+          }}>选择作品 / 确认资料</button>}
+          {error && <p className="settings-panel__error" role="alert">{error}</p>}
         </section>
       )}
 

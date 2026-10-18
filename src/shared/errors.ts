@@ -42,6 +42,26 @@ export function isAppError(error: unknown): error is AppError {
   return error instanceof AppError;
 }
 
+/** Read user-facing errors after IPC serialization, without stringifying objects. */
+export function getErrorMessage(error: unknown, fallback: string): string {
+  const displayMessage = (value: unknown): string | null => {
+    if (typeof value !== 'string' || !value.trim()) return null;
+    // Electron adds the channel name when an IPC handler rejects. Keep the
+    // useful message while leaving transport details out of user-facing alerts.
+    const message = value.replace(/^Error invoking remote method '[^']+': (?:[\w.]*Error: )?/, '');
+    return message.trim() ? message : null;
+  };
+  if (typeof error === 'object' && error !== null) {
+    for (const key of ['userMessage', 'message'] as const) {
+      if (key in error) {
+        const message = displayMessage((error as Record<string, unknown>)[key]);
+        if (message) return message;
+      }
+    }
+  }
+  return displayMessage(error) ?? fallback;
+}
+
 export function serializeAppError(error: unknown): SerializedAppError {
   if (error instanceof AppError) {
     return error.toJSON();

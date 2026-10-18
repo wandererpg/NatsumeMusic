@@ -35,6 +35,33 @@ export type MetadataSource = 'vndb' | 'bangumi';
 export type MetadataStatus = 'pending' | 'matched' | 'no_match' | 'failed' | 'ambiguous';
 export type CoverSource = 'manual' | MetadataSource | null;
 
+export interface MetadataCandidate {
+  candidateId: string;
+  externalId: string;
+  title: string;
+  titleCn: string | null;
+  aliases: string[];
+  developer: string | null;
+  summary: string | null;
+  score: number | null;
+  rank: number | null;
+  imageUrl: string | null;
+  released?: string | null;
+}
+
+export interface MetadataSearchResult {
+  source: MetadataSource;
+  queryName: string;
+  revision: number;
+  candidates: MetadataCandidate[];
+}
+
+export interface MetadataSelection {
+  source: MetadataSource;
+  candidateId: string;
+  expectedRevision: number;
+}
+
 /** Sanitized source summary safe to send to the renderer. */
 export interface GameMetadataSourceSummary {
   source: MetadataSource;
@@ -49,6 +76,12 @@ export interface GameMetadataSourceSummary {
   rank: number | null;
   fetchedAt: string | null;
   errorMessage: string | null;
+  matchMethod?: 'auto' | 'manual' | null;
+  confirmedAt?: string | null;
+  revision?: number;
+  candidates?: MetadataCandidate[];
+  searchError?: string | null;
+  imageUrl?: string | null;
 }
 
 export interface GameMetadataSummary {
@@ -77,6 +110,8 @@ export interface Game {
   trackCount: number;
   createdAt: string;
   updatedAt: string;
+  /** A successful save may retain the old cover when its replacement fails. */
+  metadataWarning?: string;
 }
 
 /** A copied audio file and its metadata. */
@@ -117,6 +152,8 @@ export interface PlaylistInput {
 export interface GameUpdate {
   name?: string;
   coverPath?: string | null;
+  metadataSelections?: MetadataSelection[];
+  coverSelection?: MetadataSource;
 }
 
 /** Progress emitted while scanning, extracting, or copying an import. */
@@ -237,6 +274,7 @@ export interface AppSettings {
 
 export type AppSettingsUpdate = Pick<AppSettings, 'libraryPath' | 'volume' | 'playMode' | 'themeId' | 'background'> & {
   fontColor: string | null;
+  rescanLibrary?: boolean;
 };
 
 export interface PlayerTimeUpdate {
@@ -251,3 +289,19 @@ export type PlayerStateListener = (state: PlayerState) => void;
 export type PlayerTimeUpdateListener = (update: PlayerTimeUpdate) => void;
 export type PlayerErrorListener = (error: SerializedAppError) => void;
 export type Unsubscribe = () => void;
+export interface PlaybackSnapshot {
+  trackId: string | null;
+  currentTime: number;
+}
+
+export interface AppUpdateState {
+  currentVersion: string;
+  supported: boolean;
+  status: 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'preparing' | 'error';
+  availableVersion?: string;
+  releaseNotes?: string;
+  progress?: number;
+  message?: string;
+  canDownload: boolean;
+  canInstall: boolean;
+}

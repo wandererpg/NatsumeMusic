@@ -94,10 +94,10 @@ describe('library database', () => {
     expect(existsSync(path.join(userDataDirectory, 'galmusic.db'))).toBe(true);
     expect(db.pragma('journal_mode', { simple: true })).toBe('wal');
     expect(db.pragma('foreign_keys', { simple: true })).toBe(1);
-    expect(db.pragma('user_version', { simple: true })).toBe(5);
+    expect(db.pragma('user_version', { simple: true })).toBe(7);
 
     migrate(db);
-    expect(db.pragma('user_version', { simple: true })).toBe(5);
+    expect(db.pragma('user_version', { simple: true })).toBe(7);
     db.close();
   });
 });

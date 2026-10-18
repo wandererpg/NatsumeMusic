@@ -1,6 +1,10 @@
 appId: com.galmusic.app
 productName: NatsumeMusic
 artifactName: ${productName}-${version}-${arch}.${ext}
+publish:
+  provider: github
+  owner: wandererpg
+  repo: NatsumeMusic
 
 directories:
   output: release

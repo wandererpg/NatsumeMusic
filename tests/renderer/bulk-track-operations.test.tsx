@@ -195,15 +195,15 @@ describe('bulk track operations', () => {
     await waitFor(() => expect(screen.queryByText('已选择 1 首')).not.toBeInTheDocument());
 
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: '' } });
-    fireEvent.click(screen.getByRole('checkbox', { name: '选择 Track 1' }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: '选择 Track 1' }));
     fireEvent.click(screen.getByRole('button', { name: '语音' }));
     await waitFor(() => expect(screen.queryByText('已选择 1 首')).not.toBeInTheDocument());
 
-    fireEvent.click(screen.getByRole('checkbox', { name: '选择 Track 1' }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: '选择 Track 1' }));
     fireEvent.click(screen.getByTestId('game-item-game-2'));
     await waitFor(() => expect(screen.queryByText('已选择 1 首')).not.toBeInTheDocument());
 
-    fireEvent.click(screen.getByRole('checkbox', { name: '选择 Track 1' }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: '选择 Track 1' }));
     fireEvent.click(screen.getByTestId('sidebar-nav-recent'));
     await waitFor(() => expect(screen.queryByText('已选择 1 首')).not.toBeInTheDocument());
   });

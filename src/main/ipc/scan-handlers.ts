@@ -14,6 +14,7 @@ import {
 } from './validation';
 import type { IpcMainLike } from './library-handlers';
 import { isValidVoiceThreshold } from '../services/track-classification';
+import type { UpdateInstallGuard } from '../services/update-install-guard';
 
 export interface ImportOptions extends ScanStartRequest {
   libraryPath: string;
@@ -35,6 +36,7 @@ export interface ScanHandlerDependencies {
   getLibraryPath: () => string | Promise<string>;
   idFactory?: () => string;
   onError?: (error: unknown, requestId: string) => void;
+  installGuard?: UpdateInstallGuard;
 }
 
 interface ScanRequestState {
@@ -80,6 +82,7 @@ export function registerScanHandlers({
   getLibraryPath,
   idFactory = randomUUID,
   onError,
+  installGuard,
 }: ScanHandlerDependencies): { activeRequests: ReadonlyMap<string, ScanRequestState> } {
   const activeRequests = new Map<string, ScanRequestState>();
 
@@ -90,6 +93,7 @@ export function registerScanHandlers({
   ipcMain.handle(IPC_SCAN_START, async (event, ...args) => {
     assertArgumentCount(args, 1, IPC_SCAN_START);
     const request = validateStartRequest(args[0]);
+    const finish = installGuard?.begin();
     const requestId = idFactory();
     const controller = new AbortController();
     const sender = (event as { sender?: ScanEventSender }).sender;
@@ -97,7 +101,7 @@ export function registerScanHandlers({
 
     // Resolve the configured library path before invoking the importer, but
     // do not block the renderer's request on a potentially long scan.
-    void Promise.resolve(getLibraryPath())
+    void Promise.resolve().then(getLibraryPath)
       .then((libraryPath) => {
         assertPath(libraryPath, 'libraryPath');
         const state = activeRequests.get(requestId);
@@ -123,6 +127,7 @@ export function registerScanHandlers({
       })
       .finally(() => {
         activeRequests.delete(requestId);
+        finish?.();
       });
 
     return requestId;

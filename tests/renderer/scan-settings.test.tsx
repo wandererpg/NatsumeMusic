@@ -10,6 +10,17 @@ import { THEMES } from '../../src/renderer/src/theme/themes';
 
 describe('scan and settings surfaces', () => {
   afterEach(() => cleanup());
+  it('explicitly requests a rescan separately from saving appearance', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const onClose = vi.fn();
+    render(<SettingsPanel settings={{
+      libraryPath: 'C:/Music/GalMusic', volume: 0.8, playMode: 'list-loop', lastTrackId: null, voiceThresholdSeconds: 25,
+      themeId: 'rain-afterglow', fontColor: null, background: { imagePath: null, blur: 12, dim: 0.42, scale: 100, positionX: 50, positionY: 50 },
+    }} onSave={onSave} onClose={onClose} />);
+    fireEvent.click(screen.getByRole('button', { name: '重新扫描歌曲' }));
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ rescanLibrary: true, libraryPath: 'C:/Music/GalMusic' }));
+  });
   it('keeps voice import off by default and submits the explicit option', async () => {
     const startScan = vi.fn().mockResolvedValue('scan-voice');
     window.galMusic = {

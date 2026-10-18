@@ -8,6 +8,39 @@ import { usePlayerStore } from '../../src/renderer/src/stores/playerStore';
 import { useUiStore } from '../../src/renderer/src/stores/uiStore';
 
 describe('app appearance integration', () => {
+  const metadataGame = {
+    id: 'metadata-game', name: 'Metadata Game', coverPath: null, coverSource: null,
+    folderPath: 'C:/Music/Metadata Game', trackCount: 1,
+    createdAt: '2026-10-14T00:00:00.000Z', updatedAt: '2026-10-14T00:00:00.000Z',
+  };
+  const metadata = { gameId: metadataGame.id, coverSource: null, sources: [] };
+
+  it('updates linked metadata without a redundant library request', async () => {
+    window.galMusic.getGames = vi.fn().mockResolvedValue([metadataGame]);
+    window.galMusic.getGameMetadata = vi.fn().mockResolvedValue(metadata);
+    window.galMusic.refreshGameMetadata = vi.fn().mockResolvedValue(metadata);
+    render(<App />);
+    fireEvent.click(await screen.findByTestId('edit-game-metadata-game'));
+    await waitFor(() => expect(screen.getByTestId('game-editor-cover-status')).toBeInTheDocument());
+    const getGames = vi.mocked(window.galMusic.getGames);
+    const callsBeforeRefresh = getGames.mock.calls.length;
+    getGames.mockResolvedValueOnce([metadataGame]).mockRejectedValue(new Error('重复读取失败'));
+    fireEvent.click(screen.getByRole('button', { name: '刷新网络资料' }));
+    await waitFor(() => expect(window.galMusic.refreshGameMetadata).toHaveBeenCalledWith(metadataGame.id));
+    await waitFor(() => expect(screen.getByRole('button', { name: '刷新网络资料' })).toBeEnabled());
+    expect(getGames).toHaveBeenCalledTimes(callsBeforeRefresh + 1);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('explains when the running app has no metadata refresh bridge', async () => {
+    window.galMusic.getGames = vi.fn().mockResolvedValue([metadataGame]);
+    window.galMusic.getGameMetadata = vi.fn().mockResolvedValue(metadata);
+    render(<App />);
+    fireEvent.click(await screen.findByTestId('edit-game-metadata-game'));
+    await waitFor(() => expect(screen.getByTestId('game-editor-cover-status')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: '刷新网络资料' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('请关闭应用后重新启动开发版');
+  });
   const setSetting = vi.fn().mockResolvedValue(undefined);
   const saveSettings = vi.fn().mockResolvedValue(undefined);
 
@@ -42,6 +75,19 @@ describe('app appearance integration', () => {
 
   afterEach(() => cleanup());
 
+  it('closes an appearance-only save without waiting for library reloads', async () => {
+    render(<App />);
+    await waitFor(() => expect(screen.getByTestId('app-shell')).toHaveAttribute('data-theme', 'amber-film'));
+    fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    fireEvent.click(await screen.findByRole('radio', { name: /霓虹终端/ }));
+    const getGames = vi.fn(() => new Promise<never>(() => {}));
+    window.galMusic.getGames = getGames;
+    fireEvent.click(screen.getByRole('button', { name: /保存设置/ }));
+    await waitFor(() => expect(screen.queryByTestId('settings-panel')).not.toBeInTheDocument());
+    expect(getGames).not.toHaveBeenCalled();
+    expect(screen.getByTestId('app-shell')).toHaveAttribute('data-theme', 'neon-terminal');
+  });
+
   it('loads, previews, and persists one theme with the shared background unchanged', async () => {
     render(<App />);
     const shell = await screen.findByTestId('app-shell');
@@ -71,6 +117,41 @@ describe('app appearance integration', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /保存设置/ }));
     await waitFor(() => expect(saveSettings).toHaveBeenCalledWith(expect.objectContaining({ fontColor: '#ff77aa' })));
+  });
+
+  it('saves the selected music directory and keeps it when settings are reopened', async () => {
+    window.galMusic.selectFolder = vi.fn().mockResolvedValue('D:/Music/NatsumeMusic');
+    render(<App />);
+    await waitFor(() => expect(screen.getByTestId('app-shell')).toHaveAttribute('data-theme', 'amber-film'));
+
+    fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    fireEvent.click(await screen.findByRole('button', { name: '浏览' }));
+    await waitFor(() => expect(screen.getByRole('textbox', { name: '音乐库位置' })).toHaveValue('D:/Music/NatsumeMusic'));
+    fireEvent.click(screen.getByRole('button', { name: /保存设置/ }));
+    await waitFor(() => expect(screen.queryByTestId('settings-panel')).not.toBeInTheDocument());
+
+    expect(saveSettings).toHaveBeenCalledWith(expect.objectContaining({
+      libraryPath: 'D:/Music/NatsumeMusic', fontColor: null,
+    }));
+    fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    expect(await screen.findByRole('textbox', { name: '音乐库位置' })).toHaveValue('D:/Music/NatsumeMusic');
+  });
+
+  it('refreshes the library immediately after selecting a directory with existing songs', async () => {
+    window.galMusic.selectFolder = vi.fn().mockResolvedValue('D:/Existing');
+    const track = { id: 'new-track', gameId: 'new-game', gameName: 'Existing', filePath: 'D:/Existing/theme.wav', fileName: 'theme.wav', customName: 'New Directory Song', displayName: 'New Directory Song', duration: 30, kind: 'music', format: 'wav', fileSize: 100, fileHash: 'new-hash', trackNumber: 0, isFavorite: false, createdAt: '', updatedAt: '' };
+    saveSettings.mockImplementationOnce(async () => {
+      window.galMusic.getGames = vi.fn().mockResolvedValue([{ id: 'new-game', name: 'Existing', trackCount: 1, coverPath: null, folderPath: 'D:/Existing', coverSource: null, createdAt: '', updatedAt: '' }]);
+      window.galMusic.getTracks = vi.fn().mockResolvedValue([track]);
+    });
+    render(<App />);
+    await waitFor(() => expect(screen.getByTestId('app-shell')).toHaveAttribute('data-theme', 'amber-film'));
+    fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    fireEvent.click(await screen.findByRole('button', { name: '浏览' }));
+    await screen.findByDisplayValue('D:/Existing');
+    fireEvent.click(screen.getByRole('button', { name: /保存设置/ }));
+    await waitFor(() => expect(useLibraryStore.getState().tracks).toHaveLength(1));
+    expect(await screen.findByText('New Directory Song')).toBeInTheDocument();
   });
 
   it('keeps the import completion result open so metadata and cover status are visible', async () => {
