@@ -303,6 +303,14 @@ export default function App({ onPlayTrack, playTrack: playTrackProp, playerState
     (onPlayTrack ?? playTrackProp)?.(track);
   };
 
+  const activateTrack = (track: Track) => {
+    if (currentTrack?.id === track.id) {
+      (playerActions?.onTogglePlay ?? storeToggle)();
+    } else {
+      playTrack(track);
+    }
+  };
+
   const handleImport = () => {
     onImport?.();
     if (!onImport) setScanDialogOpen(true);
@@ -610,8 +618,8 @@ export default function App({ onPlayTrack, playTrack: playTrackProp, playerState
                   )}
                   <TrackTable
                     tracks={tracks}
-                    playingTrackId={currentTrack?.id}
-                    onPlayTrack={playTrack}
+                    playingTrackId={isPlaying ? currentTrack?.id : null}
+                    onPlayTrack={activateTrack}
                     onRename={(track) => { setEditingTrack(track); setCurrentModal('track-edit'); }}
                     onToggleFavorite={(track) => { void toggleFavorite(track); }}
                     onAddToPlaylist={activeSection === 'playlists' ? undefined : (track) => { setPlaylistTrack(track); setCurrentModal('playlist-add'); }}
@@ -623,6 +631,7 @@ export default function App({ onPlayTrack, playTrack: playTrackProp, playerState
                     onSelectionChange={setSelectedTrackIds}
                     selectionDisabled={bulkBusy}
                     scrollContainerRef={mainContentRef}
+                    scrollResetKey={`${viewKey}:${searchText}:${trackKindFilter ?? ''}`}
                   />
                 </section>
               )}

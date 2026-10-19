@@ -172,6 +172,61 @@ describe('renderer shell', () => {
     await waitFor(() => expect(playTrack).toHaveBeenCalledWith(track));
   });
 
+  it('toggles the current row between pause and resume instead of selecting it again', async () => {
+    mockGalMusic([game], [track]);
+    const onPlayTrack = vi.fn();
+    const onTogglePlay = vi.fn();
+    const { rerender } = render(<App onPlayTrack={onPlayTrack}
+      playerState={{ currentTrack: track, isPlaying: true }} playerActions={{ onTogglePlay }} />);
+    await screen.findByTestId(`track-row-${track.id}`);
+
+    fireEvent.click(screen.getByRole('button', { name: `暂停 ${track.displayName}` }));
+    expect(onTogglePlay).toHaveBeenCalledTimes(1);
+    expect(onPlayTrack).not.toHaveBeenCalled();
+
+    rerender(<App onPlayTrack={onPlayTrack}
+      playerState={{ currentTrack: track, isPlaying: false }} playerActions={{ onTogglePlay }} />);
+    fireEvent.click(screen.getByRole('button', { name: `播放 ${track.displayName}` }));
+    expect(onTogglePlay).toHaveBeenCalledTimes(2);
+    expect(onPlayTrack).not.toHaveBeenCalled();
+  });
+
+  it('selects another track when its row play button is clicked', async () => {
+    mockGalMusic([game], [track]);
+    const onPlayTrack = vi.fn();
+    const onTogglePlay = vi.fn();
+    render(<App onPlayTrack={onPlayTrack} playerState={{ currentTrack: { ...track, id: 'other' }, isPlaying: true }}
+      playerActions={{ onTogglePlay }} />);
+    fireEvent.click(await screen.findByRole('button', { name: `播放 ${track.displayName}` }));
+    expect(onPlayTrack).toHaveBeenCalledWith(track);
+    expect(onTogglePlay).not.toHaveBeenCalled();
+  });
+
+  it('deletes a row in place without resetting the main scroll position or reloading tracks', async () => {
+    const tracks = Array.from({ length: 100 }, (_, index) => ({ ...track, id: `track-${index}`, displayName: `Song ${index}` }));
+    mockGalMusic([game], tracks);
+    render(<App />);
+    await screen.findByTestId('track-table');
+    const scroller = screen.getByTestId('main-content');
+    Object.defineProperty(scroller, 'scrollTop', { configurable: true, writable: true, value: 1_200 });
+    vi.spyOn(screen.getByTestId('track-table'), 'getBoundingClientRect').mockImplementation(() => (
+      { top: -scroller.scrollTop } as DOMRect
+    ));
+    fireEvent.scroll(scroller);
+    const row = await screen.findByTestId('track-row-track-20');
+    let finishDelete!: () => void;
+    window.galMusic.deleteTrack = vi.fn(() => new Promise<void>((resolve) => { finishDelete = resolve; }));
+    const reads = vi.mocked(window.galMusic.getTracks).mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: '从库中删除 Song 20' }));
+    expect(row).toBeInTheDocument();
+    expect(scroller.scrollTop).toBe(1_200);
+    await act(async () => { finishDelete(); });
+    await waitFor(() => expect(row).not.toBeInTheDocument());
+    expect(scroller.scrollTop).toBe(1_200);
+    expect(screen.getByTestId('track-row-track-21')).toBeInTheDocument();
+    expect(window.galMusic.getTracks).toHaveBeenCalledTimes(reads);
+  });
+
   it('plays the first track from the current collection through the primary action', async () => {
     mockGalMusic([game], [track]);
     const onPlayTrack = vi.fn();

@@ -69,6 +69,7 @@ export function TrackRow({
       tabIndex={0}
       onDoubleClick={handlePlay}
       onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
           handlePlay();
@@ -99,6 +100,7 @@ export function TrackRow({
           className="track-row__play icon-button icon-button--small"
           type="button"
           aria-label={`${isPlaying ? '暂停' : '播放'} ${track.displayName}`}
+          onDoubleClick={(event) => event.stopPropagation()}
           onClick={(event) => {
             event.stopPropagation();
             handlePlay();

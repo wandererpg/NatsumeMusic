@@ -183,4 +183,42 @@ describe('TrackTable controlled selection', () => {
     expect(scroller.scrollTop).toBe(1_200);
     expect(screen.getByTestId('track-row-track-20')).toBeInTheDocument();
   });
+
+  it('keeps the visible window after deleting tracks', () => {
+    const tracks = Array.from({ length: 100 }, (_, index) => makeTrack(index));
+    const { rerender } = render(<TrackTable tracks={tracks} />);
+    const scroller = screen.getByTestId('track-table');
+    Object.defineProperty(scroller, 'scrollTop', { configurable: true, writable: true, value: 1_200 });
+    fireEvent.scroll(scroller);
+    rerender(<TrackTable tracks={tracks.filter((track) => track.id !== 'track-20')} />);
+    expect(scroller.scrollTop).toBe(1_200);
+    expect(screen.getByTestId('track-row-track-21')).toBeInTheDocument();
+    expect(screen.queryByTestId('track-row-track-0')).not.toBeInTheDocument();
+  });
+
+  it('returns to the top when the collection or filter changes', () => {
+    const tracks = Array.from({ length: 100 }, (_, index) => makeTrack(index));
+    const { rerender } = render(<TrackTable tracks={tracks} scrollResetKey="library" />);
+    const scroller = screen.getByTestId('track-table');
+    Object.defineProperty(scroller, 'scrollTop', { configurable: true, writable: true, value: 1_200 });
+    fireEvent.scroll(scroller);
+    rerender(<TrackTable tracks={tracks} scrollResetKey="favorites" />);
+    expect(scroller.scrollTop).toBe(0);
+    expect(screen.getByTestId('track-row-track-0')).toBeInTheDocument();
+  });
+
+  it('does not activate row playback through a child button key or double-click event', () => {
+    const onPlayTrack = vi.fn();
+    const tracks = [makeTrack(0)];
+    render(<TrackTable tracks={tracks} onPlayTrack={onPlayTrack} onDelete={vi.fn()} />);
+    const play = screen.getByRole('button', { name: '播放 Track 1' });
+    fireEvent.keyDown(play, { key: 'Enter' });
+    fireEvent.click(play);
+    fireEvent.doubleClick(play);
+    expect(onPlayTrack).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(screen.getByRole('button', { name: '从库中删除 Track 1' }), { key: ' ' });
+    expect(onPlayTrack).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(screen.getByTestId('track-row-track-0'), { key: 'Enter' });
+    expect(onPlayTrack).toHaveBeenCalledTimes(2);
+  });
 });

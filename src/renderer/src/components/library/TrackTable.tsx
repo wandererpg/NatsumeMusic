@@ -27,6 +27,7 @@ export interface TrackTableProps {
   onSelectionChange?: (next: Set<string>) => void;
   selectionDisabled?: boolean;
   scrollContainerRef?: RefObject<HTMLElement | null>;
+  scrollResetKey?: string;
 }
 
 export function TrackTable({
@@ -47,6 +48,7 @@ export function TrackTable({
   onSelectionChange,
   selectionDisabled = false,
   scrollContainerRef,
+  scrollResetKey,
 }: TrackTableProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const selectAllRef = useRef<HTMLInputElement>(null);
@@ -116,11 +118,14 @@ export function TrackTable({
   }, [scrollContainerRef]);
 
   useEffect(() => {
+    lastSelectionIndexRef.current = null;
+  }, [trackOrderKey]);
+
+  useEffect(() => {
     const scrollTarget = scrollContainerRef?.current ?? scrollerRef.current;
     if (scrollTarget) scrollTarget.scrollTop = 0;
     setScrollTop(0);
-    lastSelectionIndexRef.current = null;
-  }, [scrollContainerRef, trackOrderKey]);
+  }, [scrollContainerRef, scrollResetKey]);
 
   const toggleAllTracks = () => {
     if (selectionDisabled || !onSelectionChange) return;

@@ -160,6 +160,25 @@ describe('PlayerEngine', () => {
 });
 
 describe('playerStore', () => {
+  it('pauses and resumes the same audio instance without resetting its position', () => {
+    const first = track('one', 'C:/Music/one.ogg');
+    usePlayerStore.getState().playTrack(first, [first]);
+    const audio = MockHowl.instances.at(-1)!;
+    audio.seek.mockReturnValue(42);
+    usePlayerStore.getState().seek(42);
+    audio.seek.mockClear();
+
+    usePlayerStore.getState().toggle();
+    expect(usePlayerStore.getState().isPlaying).toBe(false);
+    expect(usePlayerStore.getState().currentTime).toBe(42);
+    usePlayerStore.getState().toggle();
+    expect(usePlayerStore.getState().isPlaying).toBe(true);
+    expect(playerEngine.seek()).toBe(42);
+    expect(MockHowl.instances.at(-1)).toBe(audio);
+    expect(audio.unload).not.toHaveBeenCalled();
+    expect(audio.seek.mock.calls.every((args) => args.length === 0)).toBe(true);
+  });
+
   beforeEach(() => {
     usePlayerStore.getState().reset();
     delete (globalThis as { window?: Window }).window;
