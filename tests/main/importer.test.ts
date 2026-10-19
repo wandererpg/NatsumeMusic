@@ -15,8 +15,45 @@ import {
 import type { GameMetadataService } from '../../src/main/services/game-metadata';
 import type { ScanProgress } from '../../src/shared/types';
 import { afaFixture } from '../fixtures/afa';
+import { bgiFixture, bwFixture } from '../fixtures/bgi';
 
 describe('game-folder importer', () => {
+  it.each([false, true])('imports BGI audio and respects includeVoice=%s without extracting images', async (includeVoice) => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'galmusic-import-bgi-'));
+    const source = path.join(root, '素晴日');
+    const db = new Database(':memory:');
+    migrate(db);
+    try {
+      await mkdir(source);
+      await writeFile(path.join(source, 'data05000.arc'), bgiFixture([
+        { name: 'bgm001', data: wavWithDuration(30) },
+        { name: 'short', data: wavWithDuration(2) },
+      ]));
+      await writeFile(path.join(source, 'data04010.arc'), bgiFixture([
+        { name: 'yuki_000001', data: bwFixture(Buffer.from('OggS-voice'), 3) },
+      ]));
+      await writeFile(path.join(source, 'data02910.arc'), bgiFixture([
+        { name: 'image', data: Buffer.from('CompressedBG-image') },
+      ]));
+      const archives = new Set<string>();
+      const result = await importGameFolder({
+        sourcePath: source, libraryPath: path.join(root, 'library'), gameName: '素晴日',
+        deepScan: true, includeVoice, voiceThresholdSeconds: 25,
+        signal: new AbortController().signal,
+        onProgress: (event) => { if (event.phase === 'extracting') archives.add(path.basename(event.currentFile)); }, db,
+      });
+      expect(result).toMatchObject({ extracted: includeVoice ? 2 : 1, copied: includeVoice ? 3 : 1, errors: [] });
+      expect(archives.has('data02910.arc')).toBe(false);
+      expect(archives.has('data04010.arc')).toBe(includeVoice);
+      const tracks = listTracks(db, listGames(db)[0].id);
+      expect(tracks.filter((track) => track.kind === 'music')).toHaveLength(1);
+      expect(tracks.filter((track) => track.kind === 'voice')).toHaveLength(includeVoice ? 2 : 0);
+      expect(await readFile(tracks.find((track) => track.kind === 'music')!.filePath)).toEqual(wavWithDuration(30));
+    } finally {
+      db.close();
+      await rm(root, { recursive: true, force: true });
+    }
+  });
   it.each([false, true])('imports AFA music and respects includeVoice=%s without extracting images', async (includeVoice) => {
     const root = await mkdtemp(path.join(os.tmpdir(), 'galmusic-import-afa-'));
     const source = path.join(root, '多娜多娜');

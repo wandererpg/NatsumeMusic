@@ -1,11 +1,9 @@
-import { createReadStream, createWriteStream } from 'node:fs';
-import { mkdir, open } from 'node:fs/promises';
-import path from 'node:path';
-import { pipeline } from 'node:stream/promises';
+import { open } from 'node:fs/promises';
 import { promisify } from 'node:util';
 import { inflate } from 'node:zlib';
 import { AppError } from '../../shared/errors';
 import { isAudioFile } from './formats';
+import { writeArchiveAudio } from './archive-audio';
 
 const inflateIndex = promisify(inflate);
 const MAX_INDEX_BYTES = 64 * 1024 * 1024;
@@ -99,37 +97,6 @@ export async function extractAfaAudio(
 ): Promise<boolean> {
   const entries = await readAfaAudioIndex(archivePath, options.signal);
   if (entries === null) return false;
-  const usedNames = new Set<string>();
-  for (const entry of entries) {
-    checkAborted(options.signal);
-    const relativeName = entry.name.replace(/\\/g, '/');
-    const parts = relativeName.split('/');
-    if (path.posix.isAbsolute(relativeName) || parts.some((part) => part === '..' || part.includes(':') || part.includes('\0'))) {
-      throw invalidArchive();
-    }
-    // Keep paths within the owned temp directory and make localized names safe
-    // on Windows. Avoid case-insensitive collisions without losing entries.
-    const safeName = parts.filter((part) => part && part !== '.')
-      .map((part) => {
-        const safe = part.replace(/[<>"|?*\x00-\x1f]/g, '_').replace(/[ .]+$/, '') || '_';
-        return /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(safe) ? `_${safe}` : safe;
-      }).join(path.sep);
-    let target = path.join(outputDir, safeName);
-    const extension = path.extname(target);
-    const stem = target.slice(0, -extension.length);
-    let suffix = 2;
-    while (usedNames.has(target.toLowerCase())) target = `${stem}-${suffix++}${extension}`;
-    usedNames.add(target.toLowerCase());
-    await mkdir(path.dirname(target), { recursive: true });
-    await pipeline(
-      createReadStream(archivePath, { start: entry.offset, end: entry.offset + entry.size - 1 }),
-      createWriteStream(target, { flags: 'wx' }),
-      { signal: options.signal },
-    ).catch((error: unknown) => {
-      checkAborted(options.signal);
-      throw error;
-    });
-    options.onOutput?.(`Extracted ${entry.name}`);
-  }
+  await writeArchiveAudio(archivePath, outputDir, entries, options);
   return true;
 }

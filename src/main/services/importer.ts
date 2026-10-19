@@ -12,6 +12,7 @@ import type { ScanError, ScanProgress, ScanResult } from '../../shared/types';
 import { copyAudioFileStreaming } from './file-copy';
 import { inspectSm2MpxArchive, isArchiveFile } from './formats';
 import { readAfaAudioIndex } from './afa';
+import { readBgiAudioIndex } from './bgi';
 import { disposeTempDir, extractArchive } from './extractor';
 import { scanFolder, type AudioCandidate } from './scanner';
 import { categoryDirectory } from './library-layout';
@@ -23,6 +24,7 @@ type SQLiteDatabase = Database.Database;
 
 /** Options accepted by an injected archive extractor. */
 export interface ExtractorOptions {
+  minimumAudioDurationSeconds?: number;
   signal?: AbortSignal;
   onProgress?: (progress: ScanProgress) => void;
 }
@@ -114,7 +116,17 @@ function archiveEntryError(file: string, error: unknown): ScanError {
   return scanError(file, error, classifyFsError(error));
 }
 
-async function isImportableArchive(filePath: string, includeVoice: boolean, signal: AbortSignal): Promise<boolean> {
+async function isImportableArchive(filePath: string, includeVoice: boolean, signal: AbortSignal, minimumAudioDurationSeconds?: number): Promise<boolean> {
+  if (path.extname(filePath).toLowerCase() === '.arc') {
+    try {
+      const audio = await readBgiAudioIndex(filePath, signal);
+      return audio === null || audio.some((entry) => minimumAudioDurationSeconds === undefined
+        || entry.duration === null || entry.duration > minimumAudioDurationSeconds);
+    } catch {
+      throwIfAborted(signal);
+      return true;
+    }
+  }
   if (path.extname(filePath).toLowerCase() === '.afa') {
     // Alicesoft commonly separates dialogue into *Voice.afa containers. Avoid
     // unpacking thousands of dialogue clips unless the user asks for them.
@@ -136,7 +148,7 @@ async function isImportableArchive(filePath: string, includeVoice: boolean, sign
   return kind === 'music' || kind === 'voice' && includeVoice;
 }
 
-async function walkArchives(rootInput: string, includeVoice: boolean, signal: AbortSignal): Promise<ArchiveWalkResult> {
+async function walkArchives(rootInput: string, includeVoice: boolean, signal: AbortSignal, minimumAudioDurationSeconds?: number): Promise<ArchiveWalkResult> {
   const root = normalize(rootInput);
   let rootStats;
   try {
@@ -146,7 +158,7 @@ async function walkArchives(rootInput: string, includeVoice: boolean, signal: Ab
   }
 
   if (rootStats.isFile()) {
-    return await isImportableArchive(root, includeVoice, signal)
+    return await isImportableArchive(root, includeVoice, signal, minimumAudioDurationSeconds)
       ? { files: [root], errors: [] }
       : { files: [], errors: [] };
   }
@@ -172,7 +184,7 @@ async function walkArchives(rootInput: string, includeVoice: boolean, signal: Ab
       const entryPath = normalize(path.join(directory, entry.name));
       if (entry.isDirectory()) {
         await visit(entryPath);
-      } else if (entry.isFile() && await isImportableArchive(entryPath, includeVoice, signal)) {
+      } else if (entry.isFile() && await isImportableArchive(entryPath, includeVoice, signal, minimumAudioDurationSeconds)) {
         files.push(entryPath);
       }
     }
@@ -348,7 +360,8 @@ export async function importGameFolder(options: ImportOptions): Promise<ScanResu
   const extractor = resolveExtractor(options.extractor);
 
   if (options.deepScan) {
-    const archives = await walkArchives(options.sourcePath, options.includeVoice, options.signal);
+    const minimumAudioDurationSeconds = options.includeVoice ? undefined : options.voiceThresholdSeconds;
+    const archives = await walkArchives(options.sourcePath, options.includeVoice, options.signal, minimumAudioDurationSeconds);
     errors.push(...archives.errors);
 
     for (let archiveIndex = 0; archiveIndex < archives.files.length; archiveIndex += 1) {
@@ -366,6 +379,7 @@ export async function importGameFolder(options: ImportOptions): Promise<ScanResu
 
         tempDirectory = await extractor.extractArchive(archivePath, {
           signal: options.signal,
+          minimumAudioDurationSeconds,
           onProgress: (progress) => {
             // Normalize injected extractor progress to the importer-wide
             // archive total while preserving optional diagnostic fields.

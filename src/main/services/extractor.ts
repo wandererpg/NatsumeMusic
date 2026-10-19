@@ -8,6 +8,7 @@ import { AppError } from '../../shared/errors';
 import type { ScanProgress } from '../../shared/types';
 import { inspectSm2MpxArchive, isArchiveFile } from './formats';
 import { extractAfaAudio } from './afa';
+import { extractBgiAudio } from './bgi';
 import {
   runGarbro,
   type GarbroRunResult,
@@ -25,6 +26,8 @@ export type ArchiveRunner =
   | { run(options: ArchiveRunnerOptions): Promise<GarbroRunResult | void> };
 
 export interface ExtractOptions {
+  /** Avoid materializing short BGI voice clips when music-only import is selected. */
+  minimumAudioDurationSeconds?: number;
   signal?: AbortSignal;
   onProgress?: (progress: ScanProgress) => void;
   /** Injected GARbro runner used by tests and embedders. */
@@ -214,6 +217,10 @@ export async function extractArchive(
     checkAborted(options.signal);
     if (extension === '.afa' && await extractAfaAudio(archivePath, outputDir, { signal: options.signal, onOutput })) {
       // AFA 1/2 uses the native audio-only reader; newer variants use GARbro.
+    } else if (extension === '.arc' && await extractBgiAudio(archivePath, outputDir, {
+      signal: options.signal, onOutput, minimumAudioDurationSeconds: options.minimumAudioDurationSeconds,
+    })) {
+      // BGI stores extensionless BW-wrapped OGG; emit playable audio directly.
     } else if (extension === '.rpa') {
       const rpaOptions = options.rpaRunner ?? options.runner;
       if (rpaOptions) {
