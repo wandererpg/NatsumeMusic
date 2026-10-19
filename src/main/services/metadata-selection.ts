@@ -47,6 +47,9 @@ export function parseMetadataId(source: MetadataSource, input: string): string {
 export function createMetadataSelection(deps: SelectionDependencies) {
   // IDs are session-scoped, derived exclusively from main-process candidate data.
   const salt = randomUUID();
+  const storedExtras = (row: GameSourceRow | undefined) => {
+    try { const data = JSON.parse(row?.dataJson ?? '{}'); return data && typeof data === 'object' && !Array.isArray(data) ? data : {}; } catch { return {}; }
+  };
   const candidateId = (gameId: string, source: MetadataSource, revision: number, candidate: NormalizedMetadataCandidate) =>
     createHash('sha256').update(JSON.stringify([salt, gameId, source, revision, candidate.externalId,
       candidate.title, candidate.titleCn, candidate.aliases, candidate.developer, candidate.summary,
@@ -77,7 +80,7 @@ export function createMetadataSelection(deps: SelectionDependencies) {
         status: previous?.status ?? 'pending', imageUrl: previous?.imageUrl ?? null,
         fetchedAt: previous?.fetchedAt ?? null, retryAfter: previous?.retryAfter ?? null,
         errorMessage: previous?.errorMessage ?? null,
-        dataJson: JSON.stringify({ matched: old.matched, candidates: cache }), revision,
+        dataJson: JSON.stringify({ ...storedExtras(previous), matched: old.matched, candidates: cache }), revision,
         searchStatus: candidates.length ? 'ambiguous' : 'no_match', searchError: null, searchFetchedAt: deps.now().toISOString(),
       });
       return { source, queryName: query, revision, candidates: candidatesFor(gameId, source, revision, candidates) };
@@ -140,7 +143,7 @@ export function createMetadataSelection(deps: SelectionDependencies) {
           ...row, externalId: candidate.externalId, status: 'matched', matchMethod: 'manual',
           confirmedAt: deps.now().toISOString(), fetchedAt: deps.now().toISOString(), errorMessage: null,
           retryAfter: null, imageUrl: candidate.imageUrl, revision: revision + 1,
-          dataJson: JSON.stringify({ matched: candidate, candidates: deps.parse(row).candidates }),
+          dataJson: JSON.stringify({ ...(row.externalId === candidate.externalId ? storedExtras(row) : {}), matched: row.externalId === candidate.externalId ? { ...storedExtras(row).matched, ...candidate, ...(storedExtras(row).creditsLoaded ? { characters: storedExtras(row).matched?.characters ?? [], staff: storedExtras(row).matched?.staff ?? [] } : {}) } : candidate, candidates: deps.parse(row).candidates }),
         });
         if (coverPath && coverSource) setGameCover(deps.db, gameId, coverPath, coverSource);
       },

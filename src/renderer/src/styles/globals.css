@@ -942,3 +942,11 @@ select:focus-visible, a:focus-visible { outline: 2px solid var(--teal-0); outlin
   .album-card__open { transform: none; }
   :is(.button, .icon-button, .sidebar__nav-item, .game-list__item, .import-button, .playlist-list__item, .track-kind-filter button):active { transform: none; }
 }
+
+.sync-panel p { font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.sync-panel__hint { opacity: .72; }
+.sync-panel__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.sync-panel__preview { padding: 16px; margin-top: 16px; border: 1px solid var(--border-color, #8884); border-radius: 12px; }
+.sync-panel__preview details { margin: 12px 0; font-size: 13px; }
+.sync-panel__preview ul { max-height: 160px; overflow: auto; padding-left: 20px; }
+.sync-panel__message { user-select: text; }

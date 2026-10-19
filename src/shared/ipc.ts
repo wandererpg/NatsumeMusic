@@ -1,3 +1,4 @@
+import type { LibrarySyncAPI } from './library-sync';
 import type {
   AppUpdateState,
   PlaybackSnapshot,
@@ -183,7 +184,7 @@ export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
 export type IpcRequestChannel = (typeof IPC_REQUESTS)[keyof typeof IPC_REQUESTS];
 export type IpcEventChannel = (typeof IPC_EVENTS)[keyof typeof IPC_EVENTS];
 
-export interface GalMusicAPI {
+export interface GalMusicAPI extends LibrarySyncAPI {
   getUpdateState?: () => Promise<AppUpdateState>;
   checkForUpdates?: () => Promise<AppUpdateState>;
   downloadUpdate?: () => Promise<AppUpdateState>;

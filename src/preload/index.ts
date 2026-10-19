@@ -1,3 +1,4 @@
+import { SYNC_EXPORT, SYNC_PREVIEW, SYNC_APPLY, type SyncExportResult, type SyncPreview, type SyncApplyResult } from '../shared/library-sync';
 import { contextBridge, ipcRenderer } from 'electron';
 
 import {
@@ -129,6 +130,9 @@ function createInvoker(ipc: IpcRendererLike) {
 export function createGalMusicApi(ipc: IpcRendererLike): GalMusicAPI {
   const invoke = createInvoker(ipc);
   return {
+    exportSyncPackage: () => invoke<SyncExportResult | null>(SYNC_EXPORT),
+    previewSyncPackage: () => invoke<SyncPreview | null>(SYNC_PREVIEW),
+    applySyncPackage: (token, preference) => invoke<SyncApplyResult>(SYNC_APPLY, token, preference),
     getUpdateState: () => invoke<AppUpdateState>(UPDATE_GET_STATE),
     checkForUpdates: () => invoke<AppUpdateState>(UPDATE_CHECK),
     downloadUpdate: () => invoke<AppUpdateState>(UPDATE_DOWNLOAD),

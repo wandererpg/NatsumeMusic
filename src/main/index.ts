@@ -1,3 +1,4 @@
+import { registerLibrarySyncHandlers } from './ipc/library-sync-handlers';
 import { app, autoUpdater as electronAutoUpdater, BrowserWindow, dialog, ipcMain, net, protocol, shell } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
@@ -660,6 +661,7 @@ export async function bootstrapMainProcess(options: BootstrapOptions = {}): Prom
     prepare: async (snapshot) => { await prepareUpdate(db, userDataDirectory, version, snapshot); },
     publish: (state) => { if (mainWindow && !mainWindow.isDestroyed?.()) mainWindow.webContents?.send(UPDATE_STATE, state); },
   });
+  registerLibrarySyncHandlers({ ipc: ipcMain as unknown as IpcMainLike, dialog: dialog as unknown as DialogLike, db, guard: installGuard, getLibraryPath: async () => getSetting(db, 'library_path') ?? defaultLibrary, application: 'NatsumeMusic' });
   registerUpdateHandlers(ipcMain as unknown as IpcMainLike, updates, () => installGuard.run(() => {
     if (getSetting(db, 'update_resume_pending') !== 'true') return null;
     const value = getSetting(db, 'update_playback_snapshot');
