@@ -7,6 +7,7 @@ import path from 'node:path';
 import { AppError } from '../../shared/errors';
 import type { ScanProgress } from '../../shared/types';
 import { inspectSm2MpxArchive, isArchiveFile } from './formats';
+import { extractAfaAudio } from './afa';
 import {
   runGarbro,
   type GarbroRunResult,
@@ -211,7 +212,9 @@ export async function extractArchive(
 
   try {
     checkAborted(options.signal);
-    if (extension === '.rpa') {
+    if (extension === '.afa' && await extractAfaAudio(archivePath, outputDir, { signal: options.signal, onOutput })) {
+      // AFA 1/2 uses the native audio-only reader; newer variants use GARbro.
+    } else if (extension === '.rpa') {
       const rpaOptions = options.rpaRunner ?? options.runner;
       if (rpaOptions) {
         await invokeRunner(rpaOptions, {

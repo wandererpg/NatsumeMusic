@@ -11,6 +11,7 @@ import { assertWithin, sanitizeDirectoryName } from '../../shared/paths';
 import type { ScanError, ScanProgress, ScanResult } from '../../shared/types';
 import { copyAudioFileStreaming } from './file-copy';
 import { inspectSm2MpxArchive, isArchiveFile } from './formats';
+import { readAfaAudioIndex } from './afa';
 import { disposeTempDir, extractArchive } from './extractor';
 import { scanFolder, type AudioCandidate } from './scanner';
 import { categoryDirectory } from './library-layout';
@@ -113,7 +114,20 @@ function archiveEntryError(file: string, error: unknown): ScanError {
   return scanError(file, error, classifyFsError(error));
 }
 
-async function isImportableArchive(filePath: string, includeVoice: boolean): Promise<boolean> {
+async function isImportableArchive(filePath: string, includeVoice: boolean, signal: AbortSignal): Promise<boolean> {
+  if (path.extname(filePath).toLowerCase() === '.afa') {
+    // Alicesoft commonly separates dialogue into *Voice.afa containers. Avoid
+    // unpacking thousands of dialogue clips unless the user asks for them.
+    if (!includeVoice && /voices?\d*$/i.test(path.basename(filePath, path.extname(filePath)))) return false;
+    try {
+      const audio = await readAfaAudioIndex(filePath, signal);
+      return audio === null || audio.length > 0;
+    } catch {
+      throwIfAborted(signal);
+      // Let extraction report a damaged archive without stopping other imports.
+      return true;
+    }
+  }
   if (isArchiveFile(filePath)) return true;
   // SM2MPX containers are extensionless. Avoid opening ordinary files with
   // extensions while walking large game installations.
@@ -122,7 +136,7 @@ async function isImportableArchive(filePath: string, includeVoice: boolean): Pro
   return kind === 'music' || kind === 'voice' && includeVoice;
 }
 
-async function walkArchives(rootInput: string, includeVoice: boolean): Promise<ArchiveWalkResult> {
+async function walkArchives(rootInput: string, includeVoice: boolean, signal: AbortSignal): Promise<ArchiveWalkResult> {
   const root = normalize(rootInput);
   let rootStats;
   try {
@@ -132,7 +146,7 @@ async function walkArchives(rootInput: string, includeVoice: boolean): Promise<A
   }
 
   if (rootStats.isFile()) {
-    return await isImportableArchive(root, includeVoice)
+    return await isImportableArchive(root, includeVoice, signal)
       ? { files: [root], errors: [] }
       : { files: [], errors: [] };
   }
@@ -154,10 +168,11 @@ async function walkArchives(rootInput: string, includeVoice: boolean): Promise<A
 
     entries.sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }));
     for (const entry of entries) {
+      throwIfAborted(signal);
       const entryPath = normalize(path.join(directory, entry.name));
       if (entry.isDirectory()) {
         await visit(entryPath);
-      } else if (entry.isFile() && await isImportableArchive(entryPath, includeVoice)) {
+      } else if (entry.isFile() && await isImportableArchive(entryPath, includeVoice, signal)) {
         files.push(entryPath);
       }
     }
@@ -333,7 +348,7 @@ export async function importGameFolder(options: ImportOptions): Promise<ScanResu
   const extractor = resolveExtractor(options.extractor);
 
   if (options.deepScan) {
-    const archives = await walkArchives(options.sourcePath, options.includeVoice);
+    const archives = await walkArchives(options.sourcePath, options.includeVoice, options.signal);
     errors.push(...archives.errors);
 
     for (let archiveIndex = 0; archiveIndex < archives.files.length; archiveIndex += 1) {

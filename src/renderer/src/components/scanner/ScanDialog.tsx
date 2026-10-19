@@ -210,14 +210,14 @@ export function ScanDialog({ onClose, onCompleted, onSelectMetadata, defaultDeep
               <label className="scan-dialog__check">
                 <input type="checkbox" checked={deepScan} onChange={(event) => setDeepScan(event.target.checked)} disabled={phase === 'running'} />
                 <span className="scan-dialog__check-mark"><Check size={12} aria-hidden="true" /></span>
-                <span><strong>深度扫描归档</strong><small>自动调用 GARbro 读取 .xp3 / .rpa / .arc / .pak，以及 SM2MPX/WMSC 音乐容器</small></span>
+                <span><strong>深度扫描归档</strong><small>读取 .afa / .xp3 / .rpa / .arc / .pak，以及 SM2MPX/WMSC 音乐容器</small></span>
                 <ChevronDown size={14} className="scan-dialog__check-chevron" aria-hidden="true" />
               </label>
 
               <label className="scan-dialog__check">
                 <input type="checkbox" checked={includeVoice} onChange={(event) => setIncludeVoice(event.target.checked)} disabled={phase === 'running'} />
                 <span className="scan-dialog__check-mark"><Check size={12} aria-hidden="true" /></span>
-                <span><strong>导入语音</strong><small>{hasValidVoiceThreshold ? `${voiceThresholdSeconds} 秒` : '阈值'}及以下或无法识别时长的音频会归为语音；VOICE1/VOICE2 默认不导入</small></span>
+                <span><strong>导入语音</strong><small>{hasValidVoiceThreshold ? `${voiceThresholdSeconds} 秒` : '阈值'}及以下或无法识别时长的音频会归为语音；VOICE1/VOICE2 和 *Voice.afa 默认不导入</small></span>
               </label>
 
               {phase === 'running' && <ScanProgressView progress={progress} />}

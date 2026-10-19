@@ -21,6 +21,7 @@ export const AUDIO_EXTENSIONS: ReadonlySet<string> = new Set([
 
 /** Archive formats supported by the deep scanner/extractor pipeline. */
 export const ARCHIVE_EXTENSIONS: ReadonlySet<string> = new Set([
+  '.afa',
   '.xp3',
   '.rpa',
   '.arc',

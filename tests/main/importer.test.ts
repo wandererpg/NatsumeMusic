@@ -14,8 +14,47 @@ import {
 } from '../../src/main/services/importer';
 import type { GameMetadataService } from '../../src/main/services/game-metadata';
 import type { ScanProgress } from '../../src/shared/types';
+import { afaFixture } from '../fixtures/afa';
 
 describe('game-folder importer', () => {
+  it.each([false, true])('imports AFA music and respects includeVoice=%s without extracting images', async (includeVoice) => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'galmusic-import-afa-'));
+    const source = path.join(root, '多娜多娜');
+    const db = new Database(':memory:');
+    migrate(db);
+    try {
+      await mkdir(source);
+      await writeFile(path.join(source, 'dohnadohnaSound.afa'), afaFixture([
+        { name: '配乐.ogg.wav', data: wavWithDuration(30) },
+        { name: '音效.wav', data: wavWithDuration(2) },
+      ]));
+      await writeFile(path.join(source, 'dohnadohnaVoice.afa'), afaFixture([
+        { name: 'voice.wav', data: wavWithDuration(3) },
+      ]));
+      await writeFile(path.join(source, 'dohnadohnaCG.afa'), afaFixture([
+        { name: 'image.qnt', data: Buffer.from('not audio') },
+      ]));
+      const archives: string[] = [];
+      const result = await importGameFolder({
+        sourcePath: source, libraryPath: path.join(root, 'library'), gameName: '多娜多娜',
+        deepScan: true, includeVoice, voiceThresholdSeconds: 25,
+        signal: new AbortController().signal,
+        onProgress: (event) => { if (event.phase === 'extracting') archives.push(path.basename(event.currentFile)); },
+        db,
+      });
+      expect(result).toMatchObject({ extracted: includeVoice ? 2 : 1, copied: includeVoice ? 3 : 1, errors: [] });
+      expect(archives).toContain('dohnadohnaSound.afa');
+      expect(archives).not.toContain('dohnadohnaCG.afa');
+      expect(archives.includes('dohnadohnaVoice.afa')).toBe(includeVoice);
+      const tracks = listTracks(db, listGames(db)[0].id);
+      expect(tracks.filter((track) => track.kind === 'music')).toHaveLength(1);
+      expect(tracks.filter((track) => track.kind === 'voice')).toHaveLength(includeVoice ? 2 : 0);
+      expect(await readFile(tracks.find((track) => track.kind === 'music')!.filePath)).toEqual(wavWithDuration(30));
+    } finally {
+      db.close();
+      await rm(root, { recursive: true, force: true });
+    }
+  });
   function sm2MpxHeader(name: string): Buffer {
     const header = Buffer.alloc(32);
     header.write('SM2MPX10', 0, 'ascii');
