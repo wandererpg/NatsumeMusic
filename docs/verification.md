@@ -41,3 +41,14 @@
 5. 重新运行 npm run package:win，在 installer 和 portable ZIP 中检查 LICENSE、正式 THIRD-PARTY-NOTICES.md、licenses/、Electron/Chromium 声明和 GARbro 运行时均存在。
 
 说明：本机直接运行默认的 electron-builder --dir 时，Windows rcedit 在写入应用图标/版本资源阶段报告 “Unable to commit changes”；手动执行同一 rcedit 命令可成功。上表使用 signAndEditExecutable=false 仅用于验证 app.asar 内容，不代表已完成带图标/版本资源的正式安装包验收。
+
+
+## 2026-10-21：NatsumeMusic 0.2.2 打包验证
+
+- 相比 2026-10-16 本地 0.2.1 安装包核对真实 app.asar 与发布说明，区分新增同步/AFA/BGI/播放和滚动修复，与此前已打包的设置/动效/资料确认功能。
+- 完整 Electron/Vitest 测试：66 个文件、402 项通过；TypeScript 类型检查、资源检查和生产构建通过。
+- NSIS Windows x64 安装程序生成，EXE ProductVersion/FileVersion 为 0.2.2。安装文件 SHA-512 与 latest.yml 一致，blockmap 存在。
+- 原生模块强制重建遇到文件占用；改为复用已验证的 Electron ABI 125 模块，并在打包 EXE 下实际运行 SQLite 建表、写入、查询和 integrity_check，均通过。
+- 对比 206 个生产构建、许可证和提取工具文件，确认包内内容与工作区一致。安装版与便携版 ZIP 解压完整性检查通过，生成 SHA256SUMS.txt 及 Release 附件汇总 ZIP。
+- 在隔离数据目录中运行实际 app.asar 的主进程、预加载和界面，检查真实 IPC 桥接及同步面板，控制台错误为 0。未安装到用户目录，未修改用户音乐库。
+- 本次只推送源码，不自动创建或公开发布 GitHub Release；既有第三方授权草稿保留待复核状态。

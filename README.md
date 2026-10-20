@@ -2,7 +2,11 @@
 
 NatsumeMusic 是一款面向 Windows 的 Galgame 音乐导入、整理与播放工具。选择游戏目录后，它可以递归扫描普通音频和常见资源包，把音乐复制到独立音乐库；即使原游戏之后被移动或删除，音乐库仍然可以离线播放。
 
-当前开发版本：`0.1.2` · Windows x64 · Electron。已发布版本以 GitHub Releases 为准。
+当前开发版本：`0.2.2` · Windows x64 · Electron。已发布版本以 GitHub Releases 为准。
+
+## 0.2.2 更新
+
+新增与 NatsumeNote 的手动双向同步、AFA 和无扩展名 BGI 音频资源支持；修复曲目前播放键的暂停/继续行为与删除后的滚动位置，并改善界面和键盘操作。完整列表见 [0.2.2 更新说明](docs/releases/0.2.2.md)，同步流程见 [操作指南](docs/library-sync-guide.md)。
 
 ## 源码开发与资料确认
 
@@ -29,9 +33,9 @@ npm run dev
 
 | 文件 | 用途 |
 | --- | --- |
-| `NatsumeMusic-0.1.2-x64.exe` | 安装版，可以选择安装目录，并创建桌面/开始菜单快捷方式。 |
-| `NatsumeMusic-0.1.2-x64.exe.blockmap`、`latest.yml` | 安装版自动更新所需，必须与对应 EXE 一起发布。 |
-| `NatsumeMusic-0.1.2-windows-x64-portable.zip` | 便携版。解压后运行文件夹内的 `NatsumeMusic.exe`。 |
+| `NatsumeMusic-0.2.2-x64.exe` | 安装版，可以选择安装目录，并创建桌面/开始菜单快捷方式。 |
+| `NatsumeMusic-0.2.2-x64.exe.blockmap`、`latest.yml` | 安装版自动更新所需，必须与对应 EXE 一起发布。 |
+| `NatsumeMusic-0.2.2-windows-x64-portable.zip` | 便携版。解压后运行文件夹内的 `NatsumeMusic.exe`。 |
 | `SHA256SUMS.txt` | 发布文件的 SHA-256 校验值。 |
 
 便携版不能只拿出一个 `NatsumeMusic.exe` 使用，必须保留旁边的 `resources` 文件夹。安装版和便携版使用同一套应用数据；更新前请先关闭正在运行的旧版 NatsumeMusic。
@@ -172,6 +176,6 @@ npm run package:win
 
 1. 将源码、`README.md`、必要的许可证和第三方声明放在仓库根目录。
 2. 不要把 `node_modules`、`out`、旧的 `release-v*` 构建目录或用户音乐库提交到源码仓库。
-3. 当前准备版本为 `0.2.1`，创建 GitHub Release 时使用标签 `v0.2.1`；发布说明见 [`docs/releases/0.2.1.md`](docs/releases/0.2.1.md)。
-4. 在 Release Assets 中分别上传 `NatsumeMusic-0.2.1-x64.exe`、对应 `.exe.blockmap`、`latest.yml`、`NatsumeMusic-0.2.1-windows-x64-portable.zip` 和 `SHA256SUMS.txt`。若使用汇总包 `NatsumeMusic-0.2.1-release-assets.zip`，先解压再上传，确保应用可以直接访问更新文件。
+3. 当前准备版本为 `0.2.1`，创建 GitHub Release 时使用标签 `v0.2.2`；发布说明见 [`docs/releases/0.2.2.md`](docs/releases/0.2.2.md)。
+4. 在 Release Assets 中分别上传 `NatsumeMusic-0.2.2-x64.exe`、对应 `.exe.blockmap`、`latest.yml`、`NatsumeMusic-0.2.2-windows-x64-portable.zip` 和 `SHA256SUMS.txt`。若使用汇总包 `NatsumeMusic-0.2.2-release-assets.zip`，先解压再上传，确保应用可以直接访问更新文件。
 5. 发布前确认 GARbro 和其他随包第三方组件的许可证、版权声明及再分发条件；如需要，请把对应的 `LICENSE`/`NOTICE` 文件一并放入仓库和发布说明。
